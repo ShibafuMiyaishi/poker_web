@@ -19,10 +19,11 @@
 ## モノレポ構成（pnpm workspaces）
 
 ```
-apps/web         React + Vite + TS + Tailwind + shadcn/ui + Zustand
+apps/web         React + Vite + TS + Tailwind + Zustand（in-browser engine 駆動）
 apps/api         Cloudflare Workers + Hono + Durable Objects + D1
+packages/engine  ゲームエンジン + CPU AI（apps/web と apps/api の双方が使う）
 packages/shared  両 app から import する型 / 定数 / プロトコル
-packages/gto-charts  GTO チャート JSON データ
+packages/gto-charts  GTO チャート（ヒューリスティック生成、将来は実データ）
 docs/            仕様書（poker-webapp-spec.md が source of truth）
 tmp/             テスト・ログ・スクショ・実験スクリプト（gitignore）
 ```

@@ -7,17 +7,17 @@ Pokergo バックエンド。Cloudflare Workers + Hono + Durable Objects (`Table
 
 ```
 src/
-├── index.ts          エントリポイント（Hono app + DO export）
+├── index.ts          Workers エントリ（Hono app + DO export）
 ├── routes/           Hono ルーター（auth, lobby, history, export）
 ├── middleware/       認証 (JWT), レート制限
 ├── durable/          TableDO 実装
-├── game/             ゲームエンジン（役判定, ベッティングラウンド, サイドポット）
-├── ai/               CPU AI（プリフロ GTO 参照 + ポストフロップルール）
-├── analysis/         分析エンジン（エクイティ, EV, ポットオッズ, GTO 比較）
+├── analysis/         分析エンジン（エクイティ・EV・ポットオッズ・GTO 比較）
 └── db/               D1 アクセス層（クエリ集約）
 migrations/           D1 マイグレーション（0001_init.sql から）
 wrangler.toml
 ```
+
+ゲームエンジンと CPU AI は `@pokergo/engine`（`packages/engine/`）に移設済み。本パッケージはエンジンを **import して** Workers / DO / Hono レイヤーを実装する。役判定・state 機械は engine を再利用、apps/api では永続化と通信のみ担う。
 
 ## 必ず守ること
 
@@ -26,7 +26,7 @@ wrangler.toml
 - DO 状態は `state.storage.put` で都度永続化。
 - D1 migration は新ファイルで追加。既存編集は禁止。
 - 全 `/api/*` `/ws/*` は入口で JWT 検証。`/api/auth/*` のみ除外。
-- 役判定は `pokersolver`。仕様 §8 のテストケース（ストフラ vs クアッズ、スプリットポット、ケッカー比較、サイドポット 3 層）は `tmp/` にではなく `src/game/*.test.ts` として常設（ただし `console.log` 出力なし）。
+- 役判定や state 機械の変更は `@pokergo/engine` を直接編集する。仕様 §8 のテストケース（ストフラ vs クアッズ、スプリットポット、ケッカー比較、サイドポット 3 層）は `packages/engine/src/game/*.test.ts` に常設済（`tmp/` 配置禁止、`console.log` 残し禁止）。
 - `console.log` をプロダクションコードに残さない。観測は `[observability]` + `wrangler tail`。
 
 ## 開発コマンド
