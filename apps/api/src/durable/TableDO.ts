@@ -1,13 +1,18 @@
 import {
+  CPU_PROFILES,
+  type CpuName,
   type HandPayload,
   type HandState,
   type PlayerAction,
   type TableState,
   type WinAllocation,
-  advanceUntilHumanOrEnd,
+  advanceStreet,
+  applyAction,
   applyHumanAction,
   buildHandPayload,
   createInitialTableState,
+  cryptoRng,
+  decideAction,
   fillEmptySeatsWithCpu,
   filterHandStateForSeat,
   findHumanSeat,
@@ -27,6 +32,9 @@ import { verifyJwt } from '../lib/jwt';
 const STORAGE_KEY = 'tableState';
 const DEFAULT_TABLE_ID = 'main';
 const NEXT_HAND_DELAY_MS = 2500;
+const AFK_TIMEOUT_MS = 60_000; // 仕様 F-D-02: 60 秒不応答で自動退席
+const CPU_THINK_MIN_MS = 1000;
+const CPU_THINK_MAX_MS = 3500;
 
 interface WsAttachment {
   userId: string;
@@ -216,8 +224,10 @@ export class TableDO implements DurableObject {
       return;
     }
     this.broadcastAction(seat, action);
+    // ユーザーが時間内に応じたので AFK alarm を解除し、次イベントへ
+    await this.ctx.storage.deleteAlarm();
     await this.persist();
-    await this.continueHand();
+    await this.scheduleNext();
   }
 
   private buildPlayerAction(seat: Seat, msg: ClientMessageRaw): PlayerAction | null {
@@ -249,26 +259,108 @@ export class TableDO implements DurableObject {
     if (!this.state.currentHand) return;
     this.broadcastHandStart();
     await this.persist();
-    await this.continueHand();
+    await this.scheduleNext();
   }
 
-  private async continueHand(): Promise<void> {
+  // 次の 1 イベント（CPU 思考または人間の手番）をスケジュールする。
+  // - 人間の手番: AFK_TIMEOUT_MS の alarm
+  // - CPU の手番: CPU 思考遅延の alarm（人間らしさ演出）
+  // - toAct === null かつストリート未到達: 即座に street を進める
+  // - showdown または 1 人勝ち: finishHand
+  private async scheduleNext(): Promise<void> {
     if (!this.state || !this.state.currentHand) return;
-    const r = advanceUntilHumanOrEnd(this.state);
-    this.state = r.state;
-    for (const ev of r.events) {
-      if (ev.type === 'street_advanced') {
-        this.broadcastStreet(ev.street, ev.board);
-      } else {
-        this.broadcastAction(ev.seat, ev.action);
+
+    // 「待ち時間 0」の遷移を先に消化する: ストリート切替や hand 終了
+    while (this.state.currentHand && this.state.currentHand.toAct === null) {
+      const cur = this.state.currentHand;
+      if (cur.street === 'showdown' || isHandOver(cur)) {
+        await this.finishHand();
+        return;
       }
+      const next = advanceStreet(cur);
+      this.state = { ...this.state, currentHand: next };
+      this.broadcastStreet(next.street, next.board);
     }
     await this.persist();
+    if (!this.state.currentHand) return;
 
-    const cur = this.state.currentHand;
-    if (cur && (cur.street === 'showdown' || isHandOver(cur))) {
-      await this.finishHand();
+    const seat = this.state.currentHand.toAct;
+    if (seat === null) return;
+    const occ = this.state.seats[seat]?.occupiedBy;
+    if (!occ) return;
+
+    const delay =
+      occ.type === 'human'
+        ? AFK_TIMEOUT_MS
+        : CPU_THINK_MIN_MS + Math.floor(this.randomMs() * (CPU_THINK_MAX_MS - CPU_THINK_MIN_MS));
+    await this.ctx.storage.setAlarm(Date.now() + delay);
+  }
+
+  private randomMs(): number {
+    const buf = new Uint32Array(1);
+    crypto.getRandomValues(buf);
+    return ((buf[0] ?? 0) >>> 0) / 0x1_0000_0000;
+  }
+
+  async alarm(): Promise<void> {
+    await this.ensureState();
+    if (!this.state?.currentHand) return;
+    const seat = this.state.currentHand.toAct;
+    if (seat === null) {
+      await this.scheduleNext();
+      return;
     }
+    const occ = this.state.seats[seat]?.occupiedBy;
+    if (!occ) {
+      await this.scheduleNext();
+      return;
+    }
+
+    if (occ.type === 'human') {
+      await this.handleAfkTimeout(seat, occ.userId);
+    } else {
+      await this.handleCpuTurn(seat, occ.name as CpuName);
+    }
+    await this.persist();
+    await this.scheduleNext();
+  }
+
+  private async handleAfkTimeout(
+    seat: import('@pokergo/shared').Seat,
+    userId: string,
+  ): Promise<void> {
+    if (!this.state?.currentHand) return;
+    const player = this.state.currentHand.players.get(seat);
+    if (!player) return;
+    const action: PlayerAction =
+      player.currentBet === this.state.currentHand.currentBet
+        ? { seat, type: 'check' }
+        : { seat, type: 'fold' };
+    try {
+      const r = applyHumanAction(this.state, seat, action);
+      this.state = r.state;
+      this.broadcastAction(seat, action);
+    } catch (err) {
+      console.error('AFK auto-action failed:', err);
+    }
+    // 仕様 F-D-02: 60 秒不応答 → 自動退席 + CPU 補充
+    this.state = standUp(this.state, userId);
+    this.state = fillEmptySeatsWithCpu(this.state);
+    this.broadcastState();
+  }
+
+  private async handleCpuTurn(
+    seat: import('@pokergo/shared').Seat,
+    cpuName: CpuName,
+  ): Promise<void> {
+    if (!this.state?.currentHand) return;
+    const profile = CPU_PROFILES[cpuName] ?? CPU_PROFILES.Bravo;
+    const action = decideAction(this.state.currentHand, seat, profile, cryptoRng);
+    this.state = {
+      ...this.state,
+      currentHand: applyAction(this.state.currentHand, action),
+    };
+    this.broadcastAction(seat, action);
   }
 
   private async finishHand(): Promise<void> {
