@@ -14,10 +14,6 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "composite": true,
     "verbatimModuleSyntax": true
   },
   "exclude": ["node_modules", "dist", "build", ".wrangler", "tmp"]

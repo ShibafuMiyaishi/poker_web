@@ -9,6 +9,5 @@
     "types": ["@cloudflare/workers-types", "vitest"],
     "noEmit": true
   },
-  "include": ["src/**/*", "worker-configuration.d.ts"],
-  "references": [{ "path": "../../packages/shared" }]
+  "include": ["src/**/*", "worker-configuration.d.ts"]
 }
