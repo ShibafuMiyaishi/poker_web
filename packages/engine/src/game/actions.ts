@@ -52,6 +52,7 @@ export function applyAction(state: HandState, action: PlayerAction): HandState {
   const p = next.players.get(action.seat);
   if (!p) throw new Error('applyAction: cloned player missing');
   const potBefore = next.pot;
+  const toCallBefore = Math.max(0, next.currentBet - p.currentBet);
   let recordedAmount = 0;
 
   switch (action.type) {
@@ -163,6 +164,7 @@ export function applyAction(state: HandState, action: PlayerAction): HandState {
     type: action.type,
     amount: recordedAmount,
     potBefore,
+    toCallBefore,
   });
 
   next.toAct = computeNextToAct(next, action.seat);

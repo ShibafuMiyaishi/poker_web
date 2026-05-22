@@ -17,8 +17,9 @@ export interface ActionEntry {
   seat: Seat;
   street: Street;
   type: ActionType;
-  amount: number;
-  potBefore: number;
+  amount: number; // このアクションでポットに追加した chip 数 (delta)
+  potBefore: number; // アクション直前のポット
+  toCallBefore: number; // アクション直前の追加コール必要額 (= state.currentBet - player.currentBet)
 }
 
 export interface HandState {
