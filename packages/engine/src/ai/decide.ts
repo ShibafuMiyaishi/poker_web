@@ -40,26 +40,22 @@ export function decidePreflop(
   const decision = resolveMixedAction(chartCall, rng);
 
   if (!isFacingRaise) {
-    // open 局面: チャート通りに raise/fold（SB/BB は call も検討）
-    if (decision === 'raise') {
-      return suggestPreflopRaise(state, seat, profile);
-    }
-    if (player.currentBet === state.currentBet) {
-      return { seat, type: 'check' };
-    }
+    // open 局面
+    if (decision === 'raise') return suggestPreflopRaise(state, seat, profile);
+    if (decision === 'call') return wantsCallOrAllIn(state, seat);
+    // fold: BB option (currentBet 一致) なら check に振り替え
+    if (player.currentBet === state.currentBet) return { seat, type: 'check' };
     return { seat, type: 'fold' };
   }
 
-  // vs raise: open 範囲のハンドは call、確定 raise（チャート上）の上位は 3bet
+  // vs raise
   if (decision === 'raise') {
-    // 4-bet/3-bet をやるかは aggressiveness で確率調整。Phase 1 は通常 call に倒す。
     if (rng() < 0.3 * profile.aggressiveness) {
       return suggestPreflopRaise(state, seat, profile);
     }
     return wantsCallOrAllIn(state, seat);
   }
-  // それ以外は fold
-  if (player.currentBet === state.currentBet) return { seat, type: 'check' };
+  if (decision === 'call') return wantsCallOrAllIn(state, seat);
   return { seat, type: 'fold' };
 }
 
@@ -77,7 +73,8 @@ export function decidePostflop(
   const toCall = state.currentBet - player.currentBet;
   const canCheck = toCall === 0;
   const potOdds = toCall === 0 ? 0 : toCall / (state.pot + toCall);
-  const strongThreshold = 0.7 / profile.aggressiveness;
+  // 0.95 を上限にクランプ。極端なプロファイル (aggressiveness < 0.74) でも bet 経路に届く
+  const strongThreshold = Math.min(0.95, 0.7 / profile.aggressiveness);
 
   if (equity > strongThreshold) {
     if (canCheck) return suggestBet(state, seat, 0.66, profile);

@@ -151,6 +151,42 @@ describe('decideAction', () => {
   });
 });
 
+describe('decidePreflop branches', () => {
+  test('BB option: 全員 limp で BB が check か raise で fold ではない', () => {
+    let s = startSimple([
+      { seat: 0 as Seat, stack: 1000 },
+      { seat: 1 as Seat, stack: 1000 },
+      { seat: 2 as Seat, stack: 1000 },
+    ]);
+    s = applyAction(s, { seat: 0 as Seat, type: 'call' });
+    s = applyAction(s, { seat: 1 as Seat, type: 'call' });
+    expect(s.toAct).toBe(2);
+    const action = decideAction(s, 2 as Seat, CPU_PROFILES.Bravo, seededRng(123));
+    expect(action.type).not.toBe('fold');
+    expect(['check', 'raise', 'bet', 'all_in']).toContain(action.type);
+  });
+
+  test('vs-raise では check を絶対に返さない', () => {
+    let s = startSimple([
+      { seat: 0 as Seat, stack: 1000 },
+      { seat: 1 as Seat, stack: 1000 },
+      { seat: 2 as Seat, stack: 1000 },
+      { seat: 3 as Seat, stack: 1000 },
+    ]);
+    // 4p: BTN=0, SB=1, BB=2, UTG=3
+    expect(s.toAct).toBe(3);
+    s = applyAction(s, { seat: 3 as Seat, type: 'raise', amount: 30 });
+    let i = 0;
+    while (s.toAct !== null && i < 10) {
+      const seat = s.toAct;
+      const action = decideAction(s, seat, CPU_PROFILES.Charlie, seededRng(99 + i));
+      expect(action.type).not.toBe('check');
+      s = applyAction(s, action);
+      i++;
+    }
+  });
+});
+
 describe('AI integration (3 ハンド)', () => {
   test('5 人卓で 3 ハンド回し例外なし + チップ保存', () => {
     const TOTAL = 5 * 1000;
