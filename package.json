@@ -1,0 +1,24 @@
+{
+  "name": "pokergo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pokergo - Ten-Four の手軽さ + GTO Wizard の学習体験を統合したテキサスホールデム Web アプリ",
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "dev:web": "pnpm -F @pokergo/web dev",
+    "dev:api": "pnpm -F @pokergo/api dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20.11.0",
+    "pnpm": ">=9.0.0"
+  }
+}

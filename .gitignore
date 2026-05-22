@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Cloudflare / Wrangler
+.wrangler/
+.dev.vars
+.dev.vars.*
+wrangler.local.toml
+
+# Tests, logs, experiments, screenshots（Owner ルール: ここに集約）
+tmp/
+*.log
+coverage/
+
+# Personal Claude memo（個人専用、commit 不可）
+CLAUDE.local.md
+.claude/settings.local.json
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.recommended.json
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
