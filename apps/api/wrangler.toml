@@ -1,0 +1,66 @@
+name = "pokergo-api"
+main = "src/index.ts"
+compatibility_date = "2026-05-22"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+
+# --- 開発（wrangler dev はこのトップレベルバインディングを参照） ---
+
+[[d1_databases]]
+binding = "DB"
+database_name = "pokergo"
+database_id = "REPLACE_WITH_REAL_DB_ID"
+migrations_dir = "migrations"
+
+[[durable_objects.bindings]]
+name = "TABLE"
+class_name = "TableDO"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["TableDO"]
+
+[[kv_namespaces]]
+binding = "GTO_CACHE"
+id = "REPLACE_WITH_REAL_KV_ID"
+
+# --- プレビュー環境 ---
+# 注意: env 別バインディングは継承されない。再宣言が必要。
+
+[env.preview]
+name = "pokergo-api-preview"
+
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "pokergo-preview"
+database_id = "REPLACE_WITH_PREVIEW_DB_ID"
+migrations_dir = "migrations"
+
+[[env.preview.durable_objects.bindings]]
+name = "TABLE"
+class_name = "TableDO"
+
+[[env.preview.kv_namespaces]]
+binding = "GTO_CACHE"
+id = "REPLACE_WITH_PREVIEW_KV_ID"
+
+# --- 本番環境 ---
+
+[env.production]
+name = "pokergo-api"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "pokergo"
+database_id = "REPLACE_WITH_PROD_DB_ID"
+migrations_dir = "migrations"
+
+[[env.production.durable_objects.bindings]]
+name = "TABLE"
+class_name = "TableDO"
+
+[[env.production.kv_namespaces]]
+binding = "GTO_CACHE"
+id = "REPLACE_WITH_PROD_KV_ID"
