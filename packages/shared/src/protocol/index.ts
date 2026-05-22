@@ -22,7 +22,7 @@ export type ServerMessage =
       action: ActionType;
       amount: number;
       newPot: number;
-      toAct: Seat;
+      toAct: Seat | null;
       deadline: number;
     }
   | { type: 'street'; street: Street; board: Card[] }
@@ -32,7 +32,7 @@ export type ServerMessage =
       button: Seat;
       sb: number;
       bb: number;
-      yourCards: [Card, Card];
+      yourCards: [Card, Card] | null;
     }
   | {
       type: 'hand_end';
@@ -64,7 +64,7 @@ export interface HandStateView {
   board: Card[];
   pot: number;
   currentBet: number;
-  toAct: Seat;
+  toAct: Seat | null;
   deadline: number;
 }
 
