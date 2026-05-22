@@ -1,11 +1,13 @@
 import { type LegalAction, type PlayerAction, legalActions } from '@pokergo/engine';
 import { useState } from 'react';
 import { handDriver } from '../lib/handDriver';
+import { serverDriver } from '../lib/serverDriver';
 import { useTableStore } from '../stores/tableStore';
 
 export function ActionPanel() {
   const state = useTableStore((s) => s.state);
   const yourSeat = useTableStore((s) => s.yourSeat);
+  const mode = useTableStore((s) => s.mode);
   const [betInput, setBetInput] = useState('');
 
   if (!state || state.toAct !== yourSeat) {
@@ -20,7 +22,11 @@ export function ActionPanel() {
   const has = (t: LegalAction['type']) => legal.find((a) => a.type === t);
 
   const submit = (action: PlayerAction) => {
-    void handDriver.submitHumanAction(action);
+    if (mode === 'server') {
+      serverDriver.submitAction(action);
+    } else {
+      void handDriver.submitHumanAction(action);
+    }
   };
 
   const raise = has('raise');
