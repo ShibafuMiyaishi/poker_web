@@ -8,14 +8,18 @@ import {
   advanceStreet,
   analyzeHand,
   applyAction,
+  buildHandPayload,
   cryptoRng,
   decideAction,
   isHandOver,
   settleHand,
   startHand,
+  toPokerStarsText,
 } from '@pokergo/engine';
 import type { Seat } from '@pokergo/shared';
 import { useTableStore } from '../stores/tableStore';
+import { postHandWithQueue } from './api';
+import { getStoredUser } from './auth';
 import { computeEquity } from './equityClient';
 
 const STARTING_STACK = 1000;
@@ -155,6 +159,35 @@ class HandDriver {
     useTableStore.getState().setShowdown(winners, true);
     useTableStore.getState().setStatus('between_hands');
     useTableStore.getState().incrementHandsPlayed();
+
+    // D1 への永続化 (Phase 2)。失敗時はキューにためて次回再送。
+    const handsPlayed = useTableStore.getState().handsPlayed;
+    const cpuNames = useTableStore.getState().cpuNames;
+    const user = getStoredUser();
+    const pokerstarsText = toPokerStarsText(state, winners, {
+      tableName: 'Pokergo Main',
+      handNumber: state.handId,
+      startedAt: new Date(),
+      seatLabel: (seat) =>
+        seat === this.yourSeat ? (user?.handle ?? 'You') : (cpuNames.get(seat) ?? `Seat${seat}`),
+      yourSeat: this.yourSeat,
+    });
+    const payload = buildHandPayload(state, {
+      tableId: 'main',
+      handNo: handsPlayed,
+      startedAt: Date.now() - 10000,
+      endedAt: Date.now(),
+      pokerstarsText,
+      seatLabel: (seat) => {
+        const cpuName = cpuNames.get(seat);
+        if (seat === this.yourSeat) {
+          return { userId: user?.id ?? null, cpuName: null, position: '' };
+        }
+        return { userId: null, cpuName: cpuName ?? `Seat${seat}`, position: '' };
+      },
+      winners,
+    });
+    void postHandWithQueue(payload);
 
     // 分析を Web Worker で計算してストアへ
     analyzeHand(state, this.yourSeat, (hero, board, numOpp) =>
