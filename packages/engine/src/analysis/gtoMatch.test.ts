@@ -76,9 +76,9 @@ describe('gtoMatch (open scenario)', () => {
     expect(gtoMatch(s1, 0 as Seat, entry)).toBe(true);
   });
 
-  test('vs-raise シナリオは評価不能 (null)', () => {
+  test('vs-raise シナリオは vs-raise チャートで評価される', () => {
     const deck = deckForHands([
-      ['8s', '3h'], // SB
+      ['8s', '3h'], // SB: ゴミハンド、vs-raise で fold が正解
       ['9d', '4c'], // BB
       ['As', 'Ah'], // BTN/UTG
     ]);
@@ -94,11 +94,11 @@ describe('gtoMatch (open scenario)', () => {
       bb: 10,
       deck,
     });
-    // UTG (BTN) が raise → SB が action（vs-raise）
+    // UTG (BTN) が raise → SB が fold（vs-raise でゴミハンドの正解）
     const s1 = applyAction(s0, { seat: 0 as Seat, type: 'raise', amount: 30 });
     const s2 = applyAction(s1, { seat: 1 as Seat, type: 'fold' });
     const sbEntry = s2.actions[s2.actions.length - 1] as ActionEntry;
-    expect(gtoMatch(s2, 1 as Seat, sbEntry)).toBeNull();
+    expect(gtoMatch(s2, 1 as Seat, sbEntry)).toBe(true);
   });
 
   test('preflop 以外を渡すと throw', () => {

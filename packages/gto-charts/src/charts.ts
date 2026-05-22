@@ -46,6 +46,53 @@ const OPEN_THRESHOLDS: Record<Position, number> = {
   BB: 1.0, // BB は open 不可（クロージング側）
 };
 
+// vs-raise: 3-bet ライン（raise）と call ライン（call）を分ける。
+// 3-bet は premium のみ、call は若干広く。後段ポジションほど広い。
+const VS_RAISE_3BET_THRESHOLDS: Record<Position, number> = {
+  UTG: 0.78,
+  'UTG+1': 0.77,
+  MP: 0.76,
+  HJ: 0.74,
+  CO: 0.72,
+  BTN: 0.7,
+  SB: 0.72,
+  BB: 0.68,
+};
+
+const VS_RAISE_CALL_THRESHOLDS: Record<Position, number> = {
+  UTG: 0.62,
+  'UTG+1': 0.6,
+  MP: 0.58,
+  HJ: 0.56,
+  CO: 0.54,
+  BTN: 0.52,
+  SB: 0.55,
+  BB: 0.48, // BB はクロージング、pot odds 有利でディフェンドワイド
+};
+
+// vs-3bet: 4-bet ライン (premium only) と call ライン
+const VS_3BET_4BET_THRESHOLDS: Record<Position, number> = {
+  UTG: 0.82,
+  'UTG+1': 0.81,
+  MP: 0.8,
+  HJ: 0.79,
+  CO: 0.78,
+  BTN: 0.77,
+  SB: 0.78,
+  BB: 0.78,
+};
+
+const VS_3BET_CALL_THRESHOLDS: Record<Position, number> = {
+  UTG: 0.72,
+  'UTG+1': 0.7,
+  MP: 0.68,
+  HJ: 0.66,
+  CO: 0.64,
+  BTN: 0.62,
+  SB: 0.65,
+  BB: 0.62,
+};
+
 function generateOpenChart(position: Position): GtoChart {
   const threshold = OPEN_THRESHOLDS[position];
   const chart: GtoChart = {};
@@ -58,13 +105,38 @@ function generateOpenChart(position: Position): GtoChart {
   return chart;
 }
 
+function generateVsChart(
+  position: Position,
+  raiseThresholds: Record<Position, number>,
+  callThresholds: Record<Position, number>,
+): GtoChart {
+  const raiseThreshold = raiseThresholds[position];
+  const callThreshold = callThresholds[position];
+  const chart: GtoChart = {};
+  for (const hand of all169Hands()) {
+    const s = handStrength(hand);
+    if (s >= raiseThreshold) chart[hand] = 'raise';
+    else if (s >= callThreshold) chart[hand] = 'call';
+    else chart[hand] = 'fold';
+  }
+  return chart;
+}
+
 const chartCache = new Map<string, GtoChart>();
 
 export function loadChart(position: Position, scenario: ChartScenario): GtoChart {
   const key = `${scenario}/${position}`;
   const cached = chartCache.get(key);
   if (cached) return cached;
-  const generated = scenario === 'open' ? generateOpenChart(position) : {};
+  let generated: GtoChart;
+  if (scenario === 'open') {
+    generated = generateOpenChart(position);
+  } else if (scenario === 'vs-raise') {
+    generated = generateVsChart(position, VS_RAISE_3BET_THRESHOLDS, VS_RAISE_CALL_THRESHOLDS);
+  } else {
+    // vs-3bet
+    generated = generateVsChart(position, VS_3BET_4BET_THRESHOLDS, VS_3BET_CALL_THRESHOLDS);
+  }
   chartCache.set(key, generated);
   return generated;
 }

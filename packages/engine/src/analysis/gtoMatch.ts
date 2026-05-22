@@ -1,29 +1,35 @@
-import { loadChart, normalizeHand } from '@pokergo/gto-charts';
+import { type ChartScenario, loadChart, normalizeHand } from '@pokergo/gto-charts';
 import type { Seat } from '@pokergo/shared';
 import { derivePosition } from '../ai/decide';
 import type { ActionEntry, HandState } from '../game/types';
 
+// entry 時点でのシナリオを推定する。
+// open: 自分より前にプリフロ raise が 0 回
+// vs-raise: 1 回
+// vs-3bet: 2 回以上
+function deriveScenario(state: HandState, entry: ActionEntry): ChartScenario {
+  const idx = state.actions.indexOf(entry);
+  const prior = idx >= 0 ? state.actions.slice(0, idx) : [];
+  const raiseCount = prior.filter(
+    (a) =>
+      a.street === 'preflop' && (a.type === 'raise' || a.type === 'bet' || a.type === 'all_in'),
+  ).length;
+  if (raiseCount === 0) return 'open';
+  if (raiseCount === 1) return 'vs-raise';
+  return 'vs-3bet';
+}
+
 // プリフロのみ GTO チャートとアクションを照合し、in/out を boolean で返す。
-// open シナリオしか持たないため、対象アクション以前に raise/bet/all_in があった場合は
-// 評価不能として null を返す（誤判定回避）。
 export function gtoMatch(state: HandState, seat: Seat, entry: ActionEntry): boolean | null {
   if (entry.street !== 'preflop') {
     throw new Error('gtoMatch: preflop entry only');
   }
-  // vs-raise / vs-3bet の判定: entry より前のプリフロアクションに raise 系があったら null
-  const idx = state.actions.indexOf(entry);
-  const prior = idx >= 0 ? state.actions.slice(0, idx) : [];
-  const facedRaise = prior.some(
-    (a) =>
-      a.street === 'preflop' && (a.type === 'raise' || a.type === 'bet' || a.type === 'all_in'),
-  );
-  if (facedRaise) return null;
-
+  const scenario = deriveScenario(state, entry);
   const player = state.players.get(seat);
   if (!player) return false;
   const position = derivePosition(state, seat);
   const handStr = normalizeHand(player.holeCards);
-  const chart = loadChart(position, 'open');
+  const chart = loadChart(position, scenario);
   const expected = chart[handStr] ?? 'fold';
 
   if (expected.startsWith('mixed:')) return true;

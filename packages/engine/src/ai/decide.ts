@@ -24,6 +24,17 @@ export function derivePosition(state: HandState, seat: Seat): Position {
   return 'UTG';
 }
 
+// シナリオを HandState.currentBet とプリフロアクション数で判定する。
+function derivePreflopScenario(state: HandState): 'open' | 'vs-raise' | 'vs-3bet' {
+  const raiseCount = state.actions.filter(
+    (a) =>
+      a.street === 'preflop' && (a.type === 'raise' || a.type === 'bet' || a.type === 'all_in'),
+  ).length;
+  if (raiseCount === 0) return 'open';
+  if (raiseCount === 1) return 'vs-raise';
+  return 'vs-3bet';
+}
+
 export function decidePreflop(
   state: HandState,
   seat: Seat,
@@ -34,27 +45,20 @@ export function decidePreflop(
   if (!player) throw new Error(`decidePreflop: seat ${seat} not in hand`);
   const position = derivePosition(state, seat);
   const handStr = normalizeHand(player.holeCards);
-  const isFacingRaise = state.currentBet > state.bb;
-  const openChart = loadChart(position, 'open');
-  const chartCall = openChart[handStr] ?? 'fold';
+  const scenario = derivePreflopScenario(state);
+  const chart = loadChart(position, scenario);
+  const chartCall = chart[handStr] ?? 'fold';
   const decision = resolveMixedAction(chartCall, rng);
 
-  if (!isFacingRaise) {
-    // open 局面
+  if (scenario === 'open') {
     if (decision === 'raise') return suggestPreflopRaise(state, seat, profile);
     if (decision === 'call') return wantsCallOrAllIn(state, seat);
-    // fold: BB option (currentBet 一致) なら check に振り替え
     if (player.currentBet === state.currentBet) return { seat, type: 'check' };
     return { seat, type: 'fold' };
   }
 
-  // vs raise
-  if (decision === 'raise') {
-    if (rng() < 0.3 * profile.aggressiveness) {
-      return suggestPreflopRaise(state, seat, profile);
-    }
-    return wantsCallOrAllIn(state, seat);
-  }
+  // vs-raise / vs-3bet: チャートに従って raise (3-bet/4-bet) / call / fold
+  if (decision === 'raise') return suggestPreflopRaise(state, seat, profile);
   if (decision === 'call') return wantsCallOrAllIn(state, seat);
   return { seat, type: 'fold' };
 }
