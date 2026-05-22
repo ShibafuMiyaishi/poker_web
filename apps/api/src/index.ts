@@ -28,12 +28,12 @@ app.use(
 app.get('/', (c) => c.text('Pokergo API'));
 app.route('/api/auth', authRouter);
 
-// JWT 保護エンドポイント
+// JWT 保護エンドポイント (REST 系)。WebSocket は upgrade 時にブラウザが
+// Authorization ヘッダを乗せられないため、TableDO 側で ?token= クエリを検証する。
 app.use('/api/me', jwtMiddleware);
 app.use('/api/hands/*', jwtMiddleware);
 app.use('/api/history/*', jwtMiddleware);
 app.use('/api/lobby/*', jwtMiddleware);
-app.use('/ws/*', jwtMiddleware);
 
 app.get('/api/me', (c) => c.json({ user: c.get('user') }));
 app.route('/api/hands', handsRouter);
