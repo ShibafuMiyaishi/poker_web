@@ -13,12 +13,15 @@ interface TableStore {
   analysis: HandAnalysis | null;
   status: Status;
   handsPlayed: number;
+  actionDeadline: number | null; // ms epoch、null = タイマー無し
+  actionTotalMs: number; // 該当アクション期限の総時間（ms）
   setState: (s: HandState | null) => void;
   setCpuNames: (m: Map<Seat, string>) => void;
   setYourSeat: (s: Seat) => void;
   setStatus: (s: Status) => void;
   setShowdown: (w: WinAllocation[] | null, revealed: boolean) => void;
   setAnalysis: (a: HandAnalysis | null) => void;
+  setActionDeadline: (deadlineMs: number | null, totalMs: number) => void;
   incrementHandsPlayed: () => void;
 }
 
@@ -31,12 +34,16 @@ export const useTableStore = create<TableStore>((set) => ({
   analysis: null,
   status: 'idle',
   handsPlayed: 0,
+  actionDeadline: null,
+  actionTotalMs: 0,
   setState: (s) => set({ state: s }),
   setCpuNames: (m) => set({ cpuNames: new Map(m) }),
   setYourSeat: (s) => set({ yourSeat: s }),
   setStatus: (s) => set({ status: s }),
   setShowdown: (w, revealed) => set({ winners: w, showdownRevealed: revealed }),
   setAnalysis: (a) => set({ analysis: a }),
+  setActionDeadline: (deadlineMs, totalMs) =>
+    set({ actionDeadline: deadlineMs, actionTotalMs: totalMs }),
   incrementHandsPlayed: () => set((s) => ({ handsPlayed: s.handsPlayed + 1 })),
 }));
 

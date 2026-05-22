@@ -25,6 +25,7 @@ const SEATS = 8;
 const CPU_THINK_MIN_MS = 700;
 const CPU_THINK_MAX_MS = 2000;
 const SHOWDOWN_HOLD_MS = 3500;
+const HUMAN_TIMEOUT_MS = 10000;
 
 class HandDriver {
   private rng: Rng = cryptoRng;
@@ -32,10 +33,10 @@ class HandDriver {
   private cpuBySeat = new Map<Seat, CpuName>();
   private yourSeat: Seat = 0 as Seat;
   private buttonSeat: Seat = 1 as Seat;
+  private humanTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     for (let i = 0; i < SEATS; i++) this.stacks.set(i as Seat, STARTING_STACK);
-    // seat 0 = human、それ以外 5 体（CPU_NAMES）+ 2 体は同じ CPU 名を循環使用
     for (let i = 1; i < SEATS; i++) {
       const cpu = CPU_NAMES[(i - 1) % CPU_NAMES.length] as CpuName;
       this.cpuBySeat.set(i as Seat, cpu);
@@ -49,6 +50,7 @@ class HandDriver {
   }
 
   startNewHand(): void {
+    this.clearHumanTimer();
     const participants: { seat: Seat; stack: number }[] = [];
     for (let i = 0; i < SEATS; i++) {
       const stack = this.stacks.get(i as Seat) ?? 0;
@@ -78,11 +80,40 @@ class HandDriver {
   }
 
   async submitHumanAction(action: PlayerAction): Promise<void> {
+    this.clearHumanTimer();
     const cur = useTableStore.getState().state;
     if (!cur || cur.toAct !== this.yourSeat) return;
     const next = applyAction(cur, action);
     useTableStore.getState().setState(next);
     await this.runUntilHuman(next);
+  }
+
+  private clearHumanTimer(): void {
+    if (this.humanTimer) {
+      clearTimeout(this.humanTimer);
+      this.humanTimer = null;
+    }
+    useTableStore.getState().setActionDeadline(null, 0);
+  }
+
+  private armHumanTimer(): void {
+    this.clearHumanTimer();
+    const deadline = Date.now() + HUMAN_TIMEOUT_MS;
+    useTableStore.getState().setActionDeadline(deadline, HUMAN_TIMEOUT_MS);
+    this.humanTimer = setTimeout(() => this.autoActHuman(), HUMAN_TIMEOUT_MS);
+  }
+
+  // 仕様 §8.2 タイムアウト: 賭けるべき額 0 → check、それ以外 → fold
+  private autoActHuman(): void {
+    const state = useTableStore.getState().state;
+    if (!state || state.toAct !== this.yourSeat) return;
+    const player = state.players.get(this.yourSeat);
+    if (!player) return;
+    const action: PlayerAction =
+      player.currentBet === state.currentBet
+        ? { seat: this.yourSeat, type: 'check' }
+        : { seat: this.yourSeat, type: 'fold' };
+    void this.submitHumanAction(action);
   }
 
   private async runUntilHuman(initial: HandState): Promise<void> {
@@ -94,7 +125,8 @@ class HandDriver {
         continue;
       }
       if (state.toAct === this.yourSeat) {
-        return; // 待機: ユーザー入力
+        this.armHumanTimer();
+        return; // 待機: ユーザー入力 or タイムアウト
       }
       // CPU 番
       const cpuName = this.cpuBySeat.get(state.toAct);
@@ -104,7 +136,6 @@ class HandDriver {
       state = applyAction(state, action);
       useTableStore.getState().setState(state);
     }
-    // showdown まで進める
     while (state.street !== 'showdown') {
       state = advanceStreet(state);
       useTableStore.getState().setState(state);
@@ -113,7 +144,7 @@ class HandDriver {
   }
 
   private async finishHand(state: HandState): Promise<void> {
-    // スタック更新
+    this.clearHumanTimer();
     for (const p of state.players.values()) {
       this.stacks.set(p.seat, p.stack);
     }
@@ -126,7 +157,9 @@ class HandDriver {
     useTableStore.getState().incrementHandsPlayed();
 
     // 分析を Web Worker で計算してストアへ
-    analyzeHand(state, this.yourSeat, (hero, board) => computeEquity(hero, board, 10000))
+    analyzeHand(state, this.yourSeat, (hero, board, numOpp) =>
+      computeEquity(hero, board, 10000, numOpp),
+    )
       .then((a) => useTableStore.getState().setAnalysis(a))
       .catch(() => useTableStore.getState().setAnalysis(null));
 
