@@ -56,4 +56,28 @@ export function clearAuth(): void {
   localStorage.removeItem(USER_KEY);
 }
 
+// Google OAuth 開始: API の /api/auth/google/start にリダイレクトする。
+export function startGoogleLogin(): void {
+  window.location.href = `${API_BASE}/api/auth/google/start`;
+}
+
+// ページロード時に ?jwt=... を消費して localStorage に保存し、URL を綺麗にする。
+export function consumeJwtFromUrl(): PokergoUser | null {
+  const params = new URLSearchParams(window.location.search);
+  const jwt = params.get('jwt');
+  const handle = params.get('handle');
+  const uid = params.get('uid');
+  if (!jwt || !handle || !uid) return null;
+  localStorage.setItem(JWT_KEY, jwt);
+  const user: PokergoUser = { id: uid, handle };
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  params.delete('jwt');
+  params.delete('handle');
+  params.delete('uid');
+  const cleaned = params.toString();
+  const newUrl = window.location.pathname + (cleaned ? `?${cleaned}` : '');
+  window.history.replaceState({}, '', newUrl);
+  return user;
+}
+
 export { API_BASE };

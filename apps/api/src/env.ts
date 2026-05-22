@@ -3,8 +3,9 @@ export interface Env {
   DB: D1Database;
   GTO_CACHE: KVNamespace;
   TABLE: DurableObjectNamespace;
-  // Phase 2 で実装する secret
+  // secrets / env
   JWT_SECRET?: string;
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
+  FRONTEND_URL?: string; // 認証後リダイレクト先（Pages の本番 URL）
 }
