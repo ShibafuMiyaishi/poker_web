@@ -27,7 +27,11 @@ export interface HandAnalysis {
   actions: ActionAnalysis[];
 }
 
-export type EquityFn = (hero: readonly [Card, Card], board: readonly Card[]) => Promise<number>;
+export type EquityFn = (
+  hero: readonly [Card, Card],
+  board: readonly Card[],
+  numOpponents: number,
+) => Promise<number>;
 
 // 完了した HandState から自分の各アクションを分析する。
 // equity 計算は injection（Web Worker など）で渡す。
@@ -45,7 +49,8 @@ export async function analyzeHand(
   for (const entry of state.actions) {
     if (entry.seat !== yourSeat) continue;
     const boardAtPoint = boardAtStreet(state.board, entry.street);
-    const equity = await equityFn(player.holeCards, boardAtPoint);
+    const numOpponents = countActiveOpponents(state, entry, yourSeat);
+    const equity = await equityFn(player.holeCards, boardAtPoint, numOpponents);
     const requiredEq =
       entry.toCallBefore > 0 ? computeRequiredEquity(entry.toCallBefore, entry.potBefore) : null;
     const ev: BestActionDecision = compareEv(
@@ -78,6 +83,25 @@ export async function analyzeHand(
   }
 
   return { handId: state.handId, yourSeat, actions };
+}
+
+// entry より前のアクションをみて、fold していない他席（自分以外）の数を返す。
+function countActiveOpponents(
+  state: HandState,
+  entry: import('../game/types').ActionEntry,
+  yourSeat: Seat,
+): number {
+  const idx = state.actions.indexOf(entry);
+  const prior = idx >= 0 ? state.actions.slice(0, idx) : [];
+  const folded = new Set<Seat>();
+  for (const a of prior) {
+    if (a.type === 'fold') folded.add(a.seat);
+  }
+  let count = 0;
+  for (const seat of state.players.keys()) {
+    if (seat !== yourSeat && !folded.has(seat)) count++;
+  }
+  return Math.max(1, count);
 }
 
 function boardAtStreet(fullBoard: readonly Card[], street: Street): Card[] {

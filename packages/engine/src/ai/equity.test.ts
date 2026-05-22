@@ -24,4 +24,22 @@ describe('equityVsRandom', () => {
     const b = equityVsRandom(hero, [], 500, seededRng(7));
     expect(a).toBe(b);
   });
+
+  test('multiway: 3 opponents 相手だと 1 人相手より equity が下がる', () => {
+    const hero: [Card, Card] = ['As', 'Ah'];
+    const e1 = equityVsRandom(hero, [], 1000, seededRng(33), 1);
+    const e3 = equityVsRandom(hero, [], 1000, seededRng(33), 3);
+    expect(e3).toBeLessThan(e1);
+    // AA vs 3 random は 60-65% 程度
+    expect(e3).toBeGreaterThan(0.55);
+    expect(e3).toBeLessThan(0.75);
+  });
+
+  test('board 5 枚 (river) でも動作する', () => {
+    const hero: [Card, Card] = ['As', 'Ah'];
+    const board: Card[] = ['Kc', 'Qd', 'Js', '2h', '3c'];
+    const equity = equityVsRandom(hero, board, 500, seededRng(5));
+    expect(equity).toBeGreaterThan(0);
+    expect(equity).toBeLessThanOrEqual(1);
+  });
 });

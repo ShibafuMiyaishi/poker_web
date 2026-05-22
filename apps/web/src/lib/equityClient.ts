@@ -27,11 +27,12 @@ export function computeEquity(
   hero: readonly [Card, Card],
   board: readonly Card[],
   iterations = 10000,
+  numOpponents = 1,
 ): Promise<number> {
   const w = ensureWorker();
   const id = nextId++;
   return new Promise<number>((resolve) => {
     pending.set(id, resolve);
-    w.postMessage({ id, hero, board: [...board], iterations });
+    w.postMessage({ id, hero, board: [...board], iterations, numOpponents });
   });
 }

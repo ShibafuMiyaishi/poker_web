@@ -39,7 +39,7 @@ describe('analyzeHand', () => {
     s = advanceStreet(s);
 
     // 固定 equity 関数（テスト用）
-    const equityFn = async (_h: readonly [Card, Card], _b: readonly Card[]) => 0.5;
+    const equityFn = async (_h: readonly [Card, Card], _b: readonly Card[], _n: number) => 0.5;
 
     const analysis = await analyzeHand(s, 0 as Seat, equityFn);
     // analysis には seat 0 のアクションのみが含まれる
@@ -78,7 +78,7 @@ describe('analyzeHand', () => {
     s = applyAction(s, { seat: 1 as Seat, type: 'check' });
     s = applyAction(s, { seat: 0 as Seat, type: 'check' });
 
-    const equityFn = async (_h: readonly [Card, Card], _b: readonly Card[]) => 0.6;
+    const equityFn = async (_h: readonly [Card, Card], _b: readonly Card[], _n: number) => 0.6;
     const analysis = await analyzeHand(s, 0 as Seat, equityFn);
     const callAction = analysis.actions.find((a) => a.action === 'call');
     expect(callAction?.requiredEquityPct).not.toBeNull();
