@@ -11,6 +11,7 @@ import {
   fillEmptySeatsWithCpu,
   filterHandStateForSeat,
   findHumanSeat,
+  handStateToWire,
   isHandOver,
   settleTableHand,
   sitDownHuman,
@@ -371,17 +372,7 @@ export class TableDO implements DurableObject {
           stack: s.stack,
           sittingOut: s.sittingOut,
         })),
-        handState: filtered
-          ? {
-              handId: filtered.handId,
-              street: filtered.street,
-              board: filtered.board,
-              pot: filtered.pot,
-              currentBet: filtered.currentBet,
-              toAct: filtered.toAct,
-              deadline: 0,
-            }
-          : null,
+        handState: filtered ? handStateToWire(filtered) : null,
         yourSeat: viewerSeat,
       },
     });

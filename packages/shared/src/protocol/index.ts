@@ -44,8 +44,49 @@ export type ServerMessage =
 
 export interface TableSnapshot {
   seats: SeatView[];
-  handState: HandStateView | null;
+  // サーバ → クライアントは WireHandState（JSON 互換、players は array tuple）。
+  // 旧 HandStateView は使用しない（後方互換のため型定義は残置）。
+  handState: WireHandState | null;
   yourSeat: Seat | null;
+}
+
+// engine の HandState を JSON 互換に変換したもの。players の Map と deck を
+// JSON.stringify できる形に直してある。クライアント側で handStateFromWire(...) で復元する。
+export interface WireHandPlayer {
+  seat: Seat;
+  startStack: number;
+  stack: number;
+  holeCards: [Card, Card]; // 他席は ['??', '??']
+  status: 'active' | 'folded' | 'allin';
+  contribution: number;
+  currentBet: number;
+  hasActedSinceLastRaise: boolean;
+}
+
+export interface WireActionEntry {
+  seat: Seat;
+  street: Street;
+  type: ActionType;
+  amount: number;
+  potBefore: number;
+  toCallBefore: number;
+}
+
+export interface WireHandState {
+  handId: string;
+  street: Street;
+  board: Card[];
+  players: Array<[Seat, WireHandPlayer]>;
+  buttonSeat: Seat;
+  sb: number;
+  bb: number;
+  pot: number;
+  currentBet: number;
+  minRaise: number;
+  lastRaiser: Seat | null;
+  toAct: Seat | null;
+  actions: WireActionEntry[];
+  // deck は絶対送らない
 }
 
 export interface SeatView {
