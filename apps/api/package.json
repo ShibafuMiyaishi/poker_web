@@ -9,7 +9,7 @@
     "deploy:preview": "wrangler deploy --env preview",
     "deploy:production": "wrangler deploy --env production",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "db:migrate": "wrangler d1 migrations apply pokergo --local",
     "db:migrate:remote": "wrangler d1 migrations apply pokergo --remote",
     "cf-typegen": "wrangler types"
