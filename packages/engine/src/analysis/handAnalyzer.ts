@@ -14,10 +14,10 @@ export interface ActionAnalysis {
   equityPct: number; // 0-100
   requiredEquityPct: number | null; // toCallBefore === 0 のときは null
   bestAction: ActionType;
-  takenEvBb: number;
+  takenEvBb: number | null; // bet/raise/all_in 採用時は null
   bestEvBb: number;
-  deviationBb: number;
-  gtoMatch: boolean | null; // postflop は null
+  deviationBb: number | null;
+  gtoMatch: boolean | null; // postflop および vs-raise は null
   boardTexture: BoardTextureTag[] | null; // preflop は null
 }
 

@@ -29,10 +29,18 @@ describe('classifyBoard', () => {
     expect(tags).toContain('low');
   });
 
-  test('9h 5h 2c → two_tone + low', () => {
+  test('9h 5h 2c → two_tone + low + dynamic (フラッシュドロー含む)', () => {
     const tags = classifyBoard(['9h', '5h', '2c'] as Card[]);
     expect(tags).toContain('two_tone');
     expect(tags).toContain('low');
+    expect(tags).toContain('dynamic');
+  });
+
+  test('rainbow + 連続でない + ペアでない → dry', () => {
+    const tags = classifyBoard(['As', '7d', '2c'] as Card[]);
+    expect(tags).toContain('rainbow');
+    expect(tags).toContain('dry');
+    expect(tags).not.toContain('dynamic');
   });
 
   test('flop + turn + river の 5 枚も同様に分類', () => {

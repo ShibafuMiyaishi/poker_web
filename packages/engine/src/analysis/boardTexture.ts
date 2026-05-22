@@ -46,9 +46,12 @@ export function classifyBoard(board: readonly Card[]): BoardTextureTag[] {
   const top = unique[unique.length - 1] ?? 0;
   if (unique.length >= 3 && top - lowest <= 4) tags.push('connected');
 
-  // dynamic / dry
-  if (tags.includes('monotone') || tags.includes('connected')) tags.push('dynamic');
-  else if (tags.includes('rainbow') && !tags.includes('paired')) tags.push('dry');
+  // dynamic / dry: two_tone もフラッシュドロー含むので dynamic に含める
+  if (tags.includes('monotone') || tags.includes('two_tone') || tags.includes('connected')) {
+    tags.push('dynamic');
+  } else if (tags.includes('rainbow') && !tags.includes('paired')) {
+    tags.push('dry');
+  }
 
   return tags;
 }

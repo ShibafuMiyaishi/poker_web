@@ -1,11 +1,17 @@
 import { Hono } from 'hono';
 import type { Env } from './env';
+import { jwtMiddleware } from './middleware/auth';
 import { lobbyRouter } from './routes/lobby';
 import { wsRouter } from './routes/ws';
 
 export { TableDO } from './durable/TableDO';
 
 const app = new Hono<{ Bindings: Env }>();
+
+// Phase 2 で jwtMiddleware が JWT 検証を行う。現状はパススルー。
+app.use('/api/me', jwtMiddleware);
+app.use('/api/lobby/*', jwtMiddleware);
+app.use('/ws/*', jwtMiddleware);
 
 app.get('/', (c) => c.text('Pokergo API: scaffold (Phase 2/3 で本実装)'));
 app.get('/api/me', (c) =>

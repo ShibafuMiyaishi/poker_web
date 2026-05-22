@@ -6,12 +6,14 @@ function fmtPct(v: number | null): string {
   return `${v.toFixed(1)}%`;
 }
 
-function fmtBb(v: number): string {
+function fmtBb(v: number | null): string {
+  if (v === null) return '—';
   const sign = v > 0 ? '+' : '';
   return `${sign}${v.toFixed(2)}bb`;
 }
 
 function rowTint(a: ActionAnalysis): string {
+  if (a.deviationBb === null) return 'bg-slate-800/40';
   if (a.deviationBb < 0.05) return 'bg-win/10';
   if (a.deviationBb < 0.3) return 'bg-slate-800/60';
   return 'bg-lose/10';

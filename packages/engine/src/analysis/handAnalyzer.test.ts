@@ -42,8 +42,9 @@ describe('analyzeHand', () => {
     const equityFn = async (_h: readonly [Card, Card], _b: readonly Card[]) => 0.5;
 
     const analysis = await analyzeHand(s, 0 as Seat, equityFn);
-    // seat 0 のアクションのみ抽出されている
-    expect(analysis.actions.every((a) => true)).toBe(true);
+    // analysis には seat 0 のアクションのみが含まれる
+    const seat0Actions = s.actions.filter((a) => a.seat === 0);
+    expect(analysis.actions.length).toBe(seat0Actions.length);
     expect(analysis.actions.length).toBeGreaterThan(0);
 
     const preflopActions = analysis.actions.filter((a) => a.street === 'preflop');

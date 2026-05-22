@@ -28,6 +28,11 @@ export class TableDO implements DurableObject {
   }
 
   async webSocketMessage(ws: WebSocket, _message: string | ArrayBuffer): Promise<void> {
+    // Phase 3 メモ:
+    //   - JSON.parse → ClientMessage 型に narrowing
+    //   - subscribe/action/sit/leave/ping をディスパッチ
+    //   - 出力は必ず sendToSeat / broadcast 経由でホールカード可視性をフィルタ
+    //   - state.storage.put('tableState', ...) で都度永続化（hibernation 復帰対応）
     ws.send(
       JSON.stringify({
         type: 'error',
@@ -43,10 +48,14 @@ export class TableDO implements DurableObject {
     _reason: string,
     _wasClean: boolean,
   ): Promise<void> {
-    // Phase 3 で AFK / 自動退席処理を実装
+    // Phase 3: AFK 検知・自動退席・CPU 補充・最後に state.storage.put で永続化
   }
 
   async webSocketError(_ws: WebSocket, _error: unknown): Promise<void> {
-    // Phase 3
+    // Phase 3: エラー時も state.storage を保つ
   }
+
+  // Phase 3 で実装する seat-aware メッセージング (hole_cards 漏洩を型で縛るための骨格)。
+  // private sendToSeat(_seat: Seat, _payload: ServerMessage): void { /* hole_cards を seat ごとにフィルタ */ }
+  // private broadcast(_fn: (seat: Seat) => ServerMessage): void { /* seat ごとに sendToSeat */ }
 }

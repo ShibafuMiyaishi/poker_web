@@ -4,12 +4,21 @@ import { derivePosition } from '../ai/decide';
 import type { ActionEntry, HandState } from '../game/types';
 
 // プリフロのみ GTO チャートとアクションを照合し、in/out を boolean で返す。
-// mixed:X は両方の選択肢が許容されるため true 扱い。
-// チャートが 'open' シナリオのみ対応している点に留意（vs-raise / vs-3bet は将来）。
-export function gtoMatch(state: HandState, seat: Seat, entry: ActionEntry): boolean {
+// open シナリオしか持たないため、対象アクション以前に raise/bet/all_in があった場合は
+// 評価不能として null を返す（誤判定回避）。
+export function gtoMatch(state: HandState, seat: Seat, entry: ActionEntry): boolean | null {
   if (entry.street !== 'preflop') {
     throw new Error('gtoMatch: preflop entry only');
   }
+  // vs-raise / vs-3bet の判定: entry より前のプリフロアクションに raise 系があったら null
+  const idx = state.actions.indexOf(entry);
+  const prior = idx >= 0 ? state.actions.slice(0, idx) : [];
+  const facedRaise = prior.some(
+    (a) =>
+      a.street === 'preflop' && (a.type === 'raise' || a.type === 'bet' || a.type === 'all_in'),
+  );
+  if (facedRaise) return null;
+
   const player = state.players.get(seat);
   if (!player) return false;
   const position = derivePosition(state, seat);
@@ -24,6 +33,5 @@ export function gtoMatch(state: HandState, seat: Seat, entry: ActionEntry): bool
   if (expected === 'call') {
     return entry.type === 'call' || entry.type === 'check';
   }
-  // fold
   return entry.type === 'fold';
 }
