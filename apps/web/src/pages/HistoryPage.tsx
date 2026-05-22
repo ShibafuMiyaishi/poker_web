@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { HandReplay } from '../components/HandReplay';
 import { type HandDetail, type HandListItem, getHand, listHands } from '../lib/api';
 
 function formatDate(ms: number): string {
@@ -85,20 +86,7 @@ export function HistoryPage() {
             <div className="text-slate-400">
               Board: <span className="text-slate-100 font-mono">{selected.hand.board || '—'}</span>
             </div>
-            <details>
-              <summary className="cursor-pointer text-slate-400">
-                アクション一覧 ({selected.actions.length})
-              </summary>
-              <ul className="mt-1 space-y-0.5 max-h-72 overflow-y-auto">
-                {selected.actions.map((a) => (
-                  <li key={a.order_no} className="px-2 py-0.5 odd:bg-slate-800/30">
-                    <span className="text-slate-500">[{a.street}]</span> seat {a.seat_no}{' '}
-                    {a.action_type}
-                    {a.amount > 0 ? ` ${a.amount}` : ''}
-                  </li>
-                ))}
-              </ul>
-            </details>
+            <HandReplay detail={selected} />
             <details>
               <summary className="cursor-pointer text-slate-400">PokerStars テキスト</summary>
               <pre className="mt-1 p-2 bg-slate-950 text-[10px] leading-relaxed max-h-72 overflow-auto whitespace-pre-wrap">
