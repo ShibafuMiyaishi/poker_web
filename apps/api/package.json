@@ -15,9 +15,10 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
+    "@pokergo/engine": "workspace:*",
+    "@pokergo/gto-charts": "workspace:*",
     "@pokergo/shared": "workspace:*",
-    "hono": "^4.6.10",
-    "pokersolver": "^2.1.4"
+    "hono": "^4.6.10"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.5.27",
