@@ -52,6 +52,22 @@ describe('buildSidePots - エッジケース', () => {
     expect(pots).toEqual([]);
   });
 
+  test('サイドポット 4 層: 50 / 100 / 200 / 400 の異なる all-in', () => {
+    const contributions = new Map<Seat, number>([
+      [0, 50],
+      [1, 100],
+      [2, 200],
+      [3, 400],
+    ]);
+    const pots = buildSidePots(contributions, new Set());
+
+    expect(pots).toHaveLength(4);
+    expect(pots[0]).toEqual({ amount: 200, eligibleSeats: [0, 1, 2, 3] }); // 50*4
+    expect(pots[1]).toEqual({ amount: 150, eligibleSeats: [1, 2, 3] }); // (100-50)*3
+    expect(pots[2]).toEqual({ amount: 200, eligibleSeats: [2, 3] }); // (200-100)*2
+    expect(pots[3]).toEqual({ amount: 200, eligibleSeats: [3] }); // 400-200
+  });
+
   test('オールイン後にフォールドした参加者の階層が正しく分離される', () => {
     // Seat 0 は 50 入れた状態でフォールド（all-in 状態ではないがフォールド済）
     // Seat 1 は 100 オールイン、Seat 2 は 200 でコール
