@@ -1,4 +1,5 @@
 import type { HandAnalysis, HandPayload } from '@pokergo/engine';
+import { toast } from '../components/Toaster';
 import { API_BASE, getStoredJwt, loginAsGuest } from './auth';
 
 interface RequestOpts {
@@ -35,7 +36,11 @@ async function apiFetch<T>(path: string, opts: RequestOpts = {}): Promise<T> {
     if (!retry.ok) throw new Error(`api ${path}: ${retry.status}`);
     return (await retry.json()) as T;
   }
-  if (!res.ok) throw new Error(`api ${path}: ${res.status}`);
+  if (!res.ok) {
+    const msg = `api ${path}: ${res.status}`;
+    toast(`API エラー: ${path} (${res.status})`, 'error');
+    throw new Error(msg);
+  }
   return (await res.json()) as T;
 }
 
