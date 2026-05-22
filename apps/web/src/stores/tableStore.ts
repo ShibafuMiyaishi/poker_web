@@ -1,4 +1,4 @@
-import type { HandState, WinAllocation } from '@pokergo/engine';
+import type { HandAnalysis, HandState, WinAllocation } from '@pokergo/engine';
 import type { Card, Seat } from '@pokergo/shared';
 import { create } from 'zustand';
 
@@ -10,6 +10,7 @@ interface TableStore {
   cpuNames: Map<Seat, string>;
   showdownRevealed: boolean;
   winners: WinAllocation[] | null;
+  analysis: HandAnalysis | null;
   status: Status;
   handsPlayed: number;
   setState: (s: HandState | null) => void;
@@ -17,6 +18,7 @@ interface TableStore {
   setYourSeat: (s: Seat) => void;
   setStatus: (s: Status) => void;
   setShowdown: (w: WinAllocation[] | null, revealed: boolean) => void;
+  setAnalysis: (a: HandAnalysis | null) => void;
   incrementHandsPlayed: () => void;
 }
 
@@ -26,6 +28,7 @@ export const useTableStore = create<TableStore>((set) => ({
   cpuNames: new Map(),
   showdownRevealed: false,
   winners: null,
+  analysis: null,
   status: 'idle',
   handsPlayed: 0,
   setState: (s) => set({ state: s }),
@@ -33,6 +36,7 @@ export const useTableStore = create<TableStore>((set) => ({
   setYourSeat: (s) => set({ yourSeat: s }),
   setStatus: (s) => set({ status: s }),
   setShowdown: (w, revealed) => set({ winners: w, showdownRevealed: revealed }),
+  setAnalysis: (a) => set({ analysis: a }),
   incrementHandsPlayed: () => set((s) => ({ handsPlayed: s.handsPlayed + 1 })),
 }));
 

@@ -6,6 +6,7 @@ import {
   type PlayerAction,
   type Rng,
   advanceStreet,
+  analyzeHand,
   applyAction,
   cryptoRng,
   decideAction,
@@ -15,6 +16,7 @@ import {
 } from '@pokergo/engine';
 import type { Seat } from '@pokergo/shared';
 import { useTableStore } from '../stores/tableStore';
+import { computeEquity } from './equityClient';
 
 const STARTING_STACK = 1000;
 const SB = 5;
@@ -123,6 +125,11 @@ class HandDriver {
     useTableStore.getState().setStatus('between_hands');
     useTableStore.getState().incrementHandsPlayed();
 
+    // 分析を Web Worker で計算してストアへ
+    analyzeHand(state, this.yourSeat, (hero, board) => computeEquity(hero, board, 10000))
+      .then((a) => useTableStore.getState().setAnalysis(a))
+      .catch(() => useTableStore.getState().setAnalysis(null));
+
     // ボタン移動
     for (let i = 1; i <= SEATS; i++) {
       const cand = ((this.buttonSeat + i) % SEATS) as Seat;
@@ -133,6 +140,7 @@ class HandDriver {
     }
 
     await delay(SHOWDOWN_HOLD_MS);
+    useTableStore.getState().setAnalysis(null);
     this.startNewHand();
   }
 }

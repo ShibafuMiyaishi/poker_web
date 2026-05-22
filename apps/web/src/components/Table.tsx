@@ -1,6 +1,7 @@
 import type { Seat } from '@pokergo/shared';
 import { useTableStore } from '../stores/tableStore';
 import { ActionPanel } from './ActionPanel';
+import { AnalysisPanel } from './AnalysisPanel';
 import { Board } from './Board';
 import { SeatView } from './Seat';
 
@@ -75,6 +76,7 @@ export function Table() {
       )}
 
       <ActionPanel />
+      <AnalysisPanel />
     </div>
   );
 }
