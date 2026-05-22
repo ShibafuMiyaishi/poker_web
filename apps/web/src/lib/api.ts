@@ -1,4 +1,4 @@
-import type { HandPayload } from '@pokergo/engine';
+import type { HandAnalysis, HandPayload } from '@pokergo/engine';
 import { API_BASE, getStoredJwt, loginAsGuest } from './auth';
 
 interface RequestOpts {
@@ -41,6 +41,13 @@ async function apiFetch<T>(path: string, opts: RequestOpts = {}): Promise<T> {
 
 export async function postHand(payload: HandPayload): Promise<void> {
   await apiFetch('/api/hands', { method: 'POST', body: payload });
+}
+
+export async function postAnalysis(handId: string, analysis: HandAnalysis): Promise<void> {
+  await apiFetch(`/api/hands/${encodeURIComponent(handId)}/analysis`, {
+    method: 'POST',
+    body: analysis,
+  });
 }
 
 export interface HandListItem {
@@ -105,6 +112,8 @@ export interface StatsSummary {
   handsPlayed: number;
   totalNetChips: number;
   bbPer100: number;
+  evBbPer100: number;
+  totalDeviationBb: number;
   vpip: number;
   pfr: number;
   threeBetPct: number;
@@ -129,6 +138,7 @@ export interface GraphPoint {
   startedAt: number;
   cumulativeNetChips: number;
   cumulativeNetBb: number;
+  cumulativeEvBb: number;
 }
 
 export async function getStats(period: Period = 'all'): Promise<StatsSummary> {

@@ -18,7 +18,7 @@ import {
 } from '@pokergo/engine';
 import type { Seat } from '@pokergo/shared';
 import { useTableStore } from '../stores/tableStore';
-import { postHandWithQueue } from './api';
+import { postAnalysis, postHandWithQueue } from './api';
 import { getStoredUser } from './auth';
 import { computeEquity } from './equityClient';
 
@@ -189,11 +189,18 @@ class HandDriver {
     });
     void postHandWithQueue(payload);
 
-    // 分析を Web Worker で計算してストアへ
+    // 分析を Web Worker で計算 → ストアへ反映 → D1 actions 行にも書き戻す
     analyzeHand(state, this.yourSeat, (hero, board, numOpp) =>
       computeEquity(hero, board, 10000, numOpp),
     )
-      .then((a) => useTableStore.getState().setAnalysis(a))
+      .then(async (a) => {
+        useTableStore.getState().setAnalysis(a);
+        try {
+          await postAnalysis(state.handId, a);
+        } catch {
+          // ネットワーク不通時はサイレント失敗
+        }
+      })
       .catch(() => useTableStore.getState().setAnalysis(null));
 
     // ボタン移動

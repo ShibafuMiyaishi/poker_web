@@ -1,6 +1,6 @@
-import type { HandPayload } from '@pokergo/engine';
+import type { HandAnalysis, HandPayload } from '@pokergo/engine';
 import { Hono } from 'hono';
-import { insertHand } from '../db/hands';
+import { insertHand, isHandParticipant, updateActionAnalysis } from '../db/hands';
 import type { Env } from '../env';
 import type { AuthVariables } from '../middleware/auth';
 
@@ -33,6 +33,35 @@ handsRouter.post('/', async (c) => {
     return c.json(
       {
         error: { code: 'insert_failed', message: err instanceof Error ? err.message : 'db error' },
+      },
+      500,
+    );
+  }
+});
+
+// ハンド分析（Web Worker で算出した equity/EV/deviation/gtoMatch）を actions 行に書き戻す。
+// handDriver.finishHand 後の analyzeHand.then で呼ばれる。
+handsRouter.post('/:id/analysis', async (c) => {
+  const user = c.get('user');
+  if (!user) return c.json({ error: { code: 'unauthorized' } }, 401);
+  const handId = c.req.param('id');
+  if (!(await isHandParticipant(c.env, handId, user.id))) {
+    return c.json({ error: { code: 'forbidden' } }, 403);
+  }
+  const raw = (await c.req.json().catch(() => null)) as Partial<HandAnalysis> | null;
+  if (!raw || !raw.actions || typeof raw.yourSeat !== 'number') {
+    return c.json(
+      { error: { code: 'invalid_payload', message: 'analysis payload required' } },
+      400,
+    );
+  }
+  try {
+    const result = await updateActionAnalysis(c.env, handId, raw.yourSeat, raw as HandAnalysis);
+    return c.json({ ok: true, updated: result.updated });
+  } catch (err) {
+    return c.json(
+      {
+        error: { code: 'update_failed', message: err instanceof Error ? err.message : 'db error' },
       },
       500,
     );

@@ -1,4 +1,4 @@
-import type { HandPayload } from '@pokergo/engine';
+import type { HandAnalysis, HandPayload } from '@pokergo/engine';
 import type { Env } from '../env';
 
 // D1 batch で hand / hand_players / actions をアトミックに挿入する。
@@ -137,6 +137,57 @@ export interface HandDetailRow {
     pot_before: number;
     ts: number;
   }>;
+}
+
+// ハンド終了後に Web Worker で算出した分析を actions 行に書き戻す。
+// (hand_id, seat_no, order_no) で 1 行を一意特定する。
+export async function updateActionAnalysis(
+  env: Env,
+  handId: string,
+  yourSeat: number,
+  analysis: HandAnalysis,
+): Promise<{ updated: number }> {
+  if (analysis.actions.length === 0) return { updated: 0 };
+  const stmts = analysis.actions.map((a) =>
+    env.DB.prepare(
+      `UPDATE actions
+          SET equity_pct = ?,
+              pot_odds_pct = ?,
+              ev_action_bb = ?,
+              ev_best_bb = ?,
+              best_action = ?,
+              deviation_bb = ?,
+              gto_match = ?
+        WHERE hand_id = ? AND seat_no = ? AND order_no = ?`,
+    ).bind(
+      a.equityPct,
+      a.requiredEquityPct,
+      a.takenEvBb,
+      a.bestEvBb,
+      a.bestAction,
+      a.deviationBb,
+      a.gtoMatch === null ? null : a.gtoMatch ? 1 : 0,
+      handId,
+      yourSeat,
+      a.orderNo,
+    ),
+  );
+  await env.DB.batch(stmts);
+  return { updated: stmts.length };
+}
+
+// 自分が参加しているハンドかどうか確認する（403 ガード用）。
+export async function isHandParticipant(
+  env: Env,
+  handId: string,
+  userId: string,
+): Promise<boolean> {
+  const row = await env.DB.prepare(
+    'SELECT 1 AS ok FROM hand_players WHERE hand_id = ? AND user_id = ? LIMIT 1',
+  )
+    .bind(handId, userId)
+    .first<{ ok: number }>();
+  return !!row;
 }
 
 export async function getHandDetail(env: Env, handId: string): Promise<HandDetailRow | null> {

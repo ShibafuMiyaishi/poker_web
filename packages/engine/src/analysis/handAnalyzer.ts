@@ -6,6 +6,7 @@ import { gtoMatch } from './gtoMatch';
 import { computeRequiredEquity } from './potOdds';
 
 export interface ActionAnalysis {
+  orderNo: number; // state.actions におけるグローバル順序 (D1 actions.order_no と一致)
   street: Street;
   action: ActionType;
   amount: number;
@@ -46,8 +47,9 @@ export async function analyzeHand(
   }
 
   const actions: ActionAnalysis[] = [];
-  for (const entry of state.actions) {
-    if (entry.seat !== yourSeat) continue;
+  for (let idx = 0; idx < state.actions.length; idx++) {
+    const entry = state.actions[idx];
+    if (!entry || entry.seat !== yourSeat) continue;
     const boardAtPoint = boardAtStreet(state.board, entry.street);
     const numOpponents = countActiveOpponents(state, entry, yourSeat);
     const equity = await equityFn(player.holeCards, boardAtPoint, numOpponents);
@@ -66,6 +68,7 @@ export async function analyzeHand(
     const texture = isPreflop ? null : classifyBoard(boardAtPoint);
 
     actions.push({
+      orderNo: idx,
       street: entry.street,
       action: entry.type,
       amount: entry.amount,
