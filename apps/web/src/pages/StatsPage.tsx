@@ -74,7 +74,13 @@ export function StatsPage() {
               label="bb/100"
               value={`${stats.bbPer100 >= 0 ? '+' : ''}${stats.bbPer100.toFixed(2)}`}
               tone={stats.bbPer100 >= 0 ? 'positive' : 'negative'}
-              hint="100ハンドあたり"
+              hint="100ハンドあたり実損益"
+            />
+            <StatCard
+              label="EV bb/100"
+              value={`${stats.evBbPer100 >= 0 ? '+' : ''}${stats.evBbPer100.toFixed(2)}`}
+              tone={stats.evBbPer100 >= 0 ? 'positive' : 'negative'}
+              hint={`累積 dev ${stats.totalDeviationBb >= 0 ? '+' : ''}${stats.totalDeviationBb.toFixed(1)}bb`}
             />
             <StatCard label="VPIP" value={fmtPct(stats.vpip)} hint="自発参加率" />
             <StatCard label="PFR" value={fmtPct(stats.pfr)} hint="プリフロップレイズ率" />
@@ -89,9 +95,10 @@ export function StatsPage() {
           </div>
 
           <div>
-            <h2 className="text-sm font-semibold mb-1">累積収支</h2>
+            <h2 className="text-sm font-semibold mb-1">累積収支（実損益 緑 / EV 黄点線）</h2>
             <p className="text-[11px] text-slate-500 mb-2">
-              実損益（緑線）のみ。EV 線は分析結果を保存する次タスクで追加予定。
+              EV 線 = 実損益 + 累積 deviation_bb（最善 EV と採用 EV の差の累計）。差分が大きいほど
+              「最善プレイから乖離したぶん」を表す。差が無いハンドでは線が重なる。
             </p>
             <CumulativeGraph points={points} />
           </div>

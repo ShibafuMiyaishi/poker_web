@@ -7,6 +7,8 @@ export interface StatsSummary {
   handsPlayed: number;
   totalNetChips: number;
   bbPer100: number;
+  evBbPer100: number; // 実損益 + 累積 deviation_bb 換算
+  totalDeviationBb: number;
   vpip: number; // 0-1
   pfr: number;
   threeBetPct: number;
@@ -52,6 +54,9 @@ interface SummaryRow {
 interface AfRow {
   aggressive: number | null;
   calls: number | null;
+}
+interface DeviationRow {
+  total_deviation: number | null;
 }
 
 // 仕様 §3.1.3 F-H-04 の各指標を D1 で集計する。
@@ -170,6 +175,19 @@ export async function computeStats(
     .bind(userId, ...tsBindings)
     .first<AfRow>();
 
+  // 自分のアクションの deviation_bb を合計（分析永続化後にのみ非 NULL）
+  const deviationRow = await env.DB.prepare(
+    `SELECT COALESCE(SUM(a.deviation_bb), 0) AS total_deviation
+       FROM actions a
+       JOIN hand_players hp ON a.hand_id = hp.hand_id AND a.seat_no = hp.seat_no
+       JOIN hands h ON h.id = hp.hand_id
+      WHERE hp.user_id = ?
+        AND a.deviation_bb IS NOT NULL
+        ${tsClause}`,
+  )
+    .bind(userId, ...tsBindings)
+    .first<DeviationRow>();
+
   const handsPlayed = summary?.total_hands ?? 0;
   const totalNet = summary?.total_net_chips ?? 0;
   const avgBb = summary?.avg_bb ?? 10;
@@ -182,12 +200,19 @@ export async function computeStats(
   const threeBetOpps = threeBetOppRow?.cnt ?? 0;
   const aggressive = afRow?.aggressive ?? 0;
   const calls = afRow?.calls ?? 0;
+  const totalDeviation = deviationRow?.total_deviation ?? 0;
+
+  const bbPer100 = handsPlayed > 0 ? (totalNet / avgBb / handsPlayed) * 100 : 0;
+  // EV bb/100 = 実損益 bb/100 + 累積 deviation の per 100 平均
+  const evBbPer100 = handsPlayed > 0 ? bbPer100 + (totalDeviation / handsPlayed) * 100 : 0;
 
   return {
     period,
     handsPlayed,
     totalNetChips: totalNet,
-    bbPer100: handsPlayed > 0 ? (totalNet / avgBb / handsPlayed) * 100 : 0,
+    bbPer100,
+    evBbPer100,
+    totalDeviationBb: totalDeviation,
     vpip: handsPlayed > 0 ? vpipHands / handsPlayed : 0,
     pfr: handsPlayed > 0 ? pfrHands / handsPlayed : 0,
     threeBetPct: threeBetOpps > 0 ? threeBetHands / threeBetOpps : 0,
@@ -213,6 +238,7 @@ export interface GraphPoint {
   startedAt: number;
   cumulativeNetChips: number;
   cumulativeNetBb: number;
+  cumulativeEvBb: number; // 実損益 + 累積 deviation_bb
 }
 
 interface GraphRow {
@@ -220,6 +246,7 @@ interface GraphRow {
   started_at: number;
   bb: number;
   net_chips: number;
+  deviation_sum: number | null;
 }
 
 export async function computeGraphPoints(
@@ -232,7 +259,15 @@ export async function computeGraphPoints(
   const tsBindings = sinceMs > 0 ? [sinceMs] : [];
 
   const result = await env.DB.prepare(
-    `SELECT h.id, h.started_at, h.bb, hp.net_chips
+    `SELECT h.id,
+            h.started_at,
+            h.bb,
+            hp.net_chips,
+            (SELECT COALESCE(SUM(a.deviation_bb), 0)
+               FROM actions a
+              WHERE a.hand_id = h.id
+                AND a.seat_no = hp.seat_no
+                AND a.deviation_bb IS NOT NULL) AS deviation_sum
        FROM hand_players hp
        JOIN hands h ON h.id = hp.hand_id
       WHERE hp.user_id = ? ${tsClause}
@@ -244,15 +279,18 @@ export async function computeGraphPoints(
   const rows = result.results ?? [];
   let cumNet = 0;
   let cumBb = 0;
+  let cumDevBb = 0;
   return rows.map((r, i) => {
     cumNet += r.net_chips;
     const bb = r.bb || 10;
     cumBb += r.net_chips / bb;
+    cumDevBb += r.deviation_sum ?? 0;
     return {
       handNo: i + 1,
       startedAt: r.started_at,
       cumulativeNetChips: cumNet,
       cumulativeNetBb: cumBb,
+      cumulativeEvBb: cumBb + cumDevBb,
     };
   });
 }
