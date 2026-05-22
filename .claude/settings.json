@@ -13,6 +13,7 @@
       "Bash(git restore:*)",
       "Bash(git branch:*)",
       "Bash(git switch:*)",
+      "Bash(git push:*)",
       "Bash(wrangler dev:*)",
       "Bash(wrangler types:*)",
       "Bash(wrangler d1 migrations apply:*)",
@@ -29,7 +30,7 @@
       "Write(docs/**)",
       "Write(.claude/**)"
     ],
-    "deny": ["Bash(wrangler deploy:*)", "Bash(git push:*)", "Bash(rm -rf:*)"]
+    "deny": ["Bash(wrangler deploy:*)", "Bash(rm -rf:*)"]
   },
   "env": {
     "POKERGO_ROOT": "true"
