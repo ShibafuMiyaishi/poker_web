@@ -98,6 +98,47 @@ export async function getHand(id: string): Promise<HandDetail> {
   return apiFetch(`/api/history/hands/${encodeURIComponent(id)}`);
 }
 
+export type Period = 'all' | 'month' | 'week';
+
+export interface StatsSummary {
+  period: Period;
+  handsPlayed: number;
+  totalNetChips: number;
+  bbPer100: number;
+  vpip: number;
+  pfr: number;
+  threeBetPct: number;
+  af: number;
+  wtsd: number;
+  wDollarSd: number;
+  detail: {
+    vpipHands: number;
+    pfrHands: number;
+    threeBetOpportunities: number;
+    threeBetHands: number;
+    sawFlopHands: number;
+    showdownHands: number;
+    winsAtShowdown: number;
+    postflopAggressive: number;
+    postflopCalls: number;
+  };
+}
+
+export interface GraphPoint {
+  handNo: number;
+  startedAt: number;
+  cumulativeNetChips: number;
+  cumulativeNetBb: number;
+}
+
+export async function getStats(period: Period = 'all'): Promise<StatsSummary> {
+  return apiFetch(`/api/history/stats?period=${period}`);
+}
+
+export async function getGraph(period: Period = 'all'): Promise<{ points: GraphPoint[] }> {
+  return apiFetch(`/api/history/graph?period=${period}`);
+}
+
 function loadPendingQueue(): HandPayload[] {
   const s = localStorage.getItem(PENDING_QUEUE_KEY);
   if (!s) return [];
