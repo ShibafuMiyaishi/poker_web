@@ -6,12 +6,14 @@ export interface CpuProfile {
   callThresholdEquity: number; // medium hand を call と判定する下限 equity
 }
 
+// aggressiveness は 0.95-1.10 のレンジに収めて極端な行動を抑制。
+// bluffFreq は半減（ポストフロップで wild な賭けを減らす）。
 export const CPU_PROFILES = {
-  Alpha: { name: 'Alpha', aggressiveness: 1.1, bluffFreq: 0.15, callThresholdEquity: 0.45 },
-  Bravo: { name: 'Bravo', aggressiveness: 1.0, bluffFreq: 0.1, callThresholdEquity: 0.48 },
-  Charlie: { name: 'Charlie', aggressiveness: 0.9, bluffFreq: 0.08, callThresholdEquity: 0.5 },
-  Delta: { name: 'Delta', aggressiveness: 1.05, bluffFreq: 0.12, callThresholdEquity: 0.46 },
-  Echo: { name: 'Echo', aggressiveness: 1.15, bluffFreq: 0.18, callThresholdEquity: 0.42 },
+  Alpha: { name: 'Alpha', aggressiveness: 1.05, bluffFreq: 0.06, callThresholdEquity: 0.46 },
+  Bravo: { name: 'Bravo', aggressiveness: 1.0, bluffFreq: 0.05, callThresholdEquity: 0.48 },
+  Charlie: { name: 'Charlie', aggressiveness: 0.95, bluffFreq: 0.04, callThresholdEquity: 0.5 },
+  Delta: { name: 'Delta', aggressiveness: 1.02, bluffFreq: 0.05, callThresholdEquity: 0.47 },
+  Echo: { name: 'Echo', aggressiveness: 1.08, bluffFreq: 0.07, callThresholdEquity: 0.45 },
 } as const satisfies Record<string, CpuProfile>;
 
 export type CpuName = keyof typeof CPU_PROFILES;

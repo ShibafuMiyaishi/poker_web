@@ -72,16 +72,18 @@ export function decidePostflop(
   const player = state.players.get(seat);
   if (!player) throw new Error(`decidePostflop: seat ${seat} not in hand`);
 
-  // 試行回数は速度優先で抑える。仕様 §10.1 では 1 万試行 100ms 目標だが CPU 推論はこれより軽くて良い。
-  const equity = equityVsRandom(player.holeCards, state.board, 300, rng);
+  // 試行回数を 300 → 600 に増やしてノイズ軽減（CPU 行動が安定）。
+  const equity = equityVsRandom(player.holeCards, state.board, 600, rng);
   const toCall = state.currentBet - player.currentBet;
   const canCheck = toCall === 0;
   const potOdds = toCall === 0 ? 0 : toCall / (state.pot + toCall);
-  // 0.95 を上限にクランプ。極端なプロファイル (aggressiveness < 0.74) でも bet 経路に届く
-  const strongThreshold = Math.min(0.95, 0.7 / profile.aggressiveness);
+  // strongThreshold は 0.72 を下限・0.92 を上限にクランプ（極端な over-bet を抑制）
+  const strongThreshold = Math.max(0.72, Math.min(0.92, 0.78 / profile.aggressiveness));
 
   if (equity > strongThreshold) {
-    if (canCheck) return suggestBet(state, seat, 0.66, profile);
+    // 強いハンドでもサイズは 1/2 〜 2/3 pot に抑える（無茶な all-in を避ける）
+    const fraction = 0.5 + 0.15 * Math.min(1, profile.aggressiveness - 0.9);
+    if (canCheck) return suggestBet(state, seat, Math.max(0.4, fraction), profile);
     return suggestRaise(state, seat, profile);
   }
 
@@ -95,9 +97,9 @@ export function decidePostflop(
     return wantsCallOrAllIn(state, seat);
   }
 
-  // 弱: 一定確率でブラフ
-  if (canCheck && rng() < profile.bluffFreq) {
-    return suggestBet(state, seat, 0.5, profile);
+  // 弱: ブラフは大幅に抑え、checkable な状況でのみ・低頻度で
+  if (canCheck && rng() < profile.bluffFreq * 0.5) {
+    return suggestBet(state, seat, 0.45, profile);
   }
 
   if (canCheck) return { seat, type: 'check' };
@@ -128,11 +130,11 @@ function wantsCallOrAllIn(state: HandState, seat: Seat): PlayerAction {
 function suggestPreflopRaise(state: HandState, seat: Seat, profile: CpuProfile): PlayerAction {
   const player = state.players.get(seat);
   if (!player) throw new Error('suggestPreflopRaise: missing player');
-  // open: 2.5bb 〜 3bb、vs raise: 3x previous raise
+  // open: 2.2-2.5bb、vs raise: 2.5-3x (より控えめに調整、過剰な escalation を防止)
   const isFacingRaise = state.currentBet > state.bb;
   const target = isFacingRaise
-    ? Math.floor(state.currentBet * 3 * profile.aggressiveness)
-    : Math.floor(state.bb * 2.5 * profile.aggressiveness);
+    ? Math.floor(state.currentBet * (2.5 + 0.2 * (profile.aggressiveness - 1)))
+    : Math.floor(state.bb * (2.3 + 0.2 * (profile.aggressiveness - 1)));
   return clampToBetOrAllIn(state, seat, target, 'raise');
 }
 
@@ -151,7 +153,9 @@ function suggestBet(
 function suggestRaise(state: HandState, seat: Seat, profile: CpuProfile): PlayerAction {
   const player = state.players.get(seat);
   if (!player) throw new Error('suggestRaise: missing player');
-  const target = Math.floor(state.currentBet * 3 * profile.aggressiveness);
+  // ポストフロップの raise は 2.2-2.8x（暴走防止）
+  const multiplier = 2.2 + 0.4 * Math.min(1, Math.max(0, profile.aggressiveness - 0.9));
+  const target = Math.floor(state.currentBet * multiplier);
   return clampToBetOrAllIn(state, seat, target, 'raise');
 }
 
