@@ -5,18 +5,26 @@ interface Props {
   currentBet?: number;
 }
 
-// 卓中央のポット表示。金額を大きく + ChipStack ビジュアル + 現ベット表示。
+// 卓中央の Pot 表示: chip stack + 「TOTAL POT」brass ライン + 大型 brass-text 数字。
+// 数値はパルス。
 export function Pot({ amount, currentBet = 0 }: Props) {
   return (
     <div className="flex flex-col items-center gap-1 select-none">
-      <ChipStack amount={amount} />
-      <div className="text-center">
-        <div className="text-[10px] uppercase tracking-widest text-slate-300/80">pot</div>
-        <div className="text-2xl font-bold tabular-nums text-amber-300 drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]">
+      <ChipStack amount={amount} showLabel={false} />
+      <div className="flex flex-col items-center gap-0">
+        <div className="flex items-baseline gap-2 mt-0.5">
+          <span className="text-[9px] font-display italic tracking-ultra uppercase text-brass">
+            Total Pot
+          </span>
+          <span className="font-jp text-[9px] text-ivory-dim tracking-widest">合計</span>
+        </div>
+        <div className="brass-text text-3xl sm:text-4xl font-display font-bold tabular-nums animate-pot-pulse leading-none">
           {amount.toLocaleString()}
         </div>
         {currentBet > 0 && (
-          <div className="text-[10px] text-slate-300">to call ベット {currentBet}</div>
+          <div className="text-[10px] text-ivory-dim font-mono-tabular tracking-wide mt-0.5">
+            <span className="text-brass">▸</span> to call · {currentBet}
+          </div>
         )}
       </div>
     </div>

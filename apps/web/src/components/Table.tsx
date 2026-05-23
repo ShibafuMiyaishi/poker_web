@@ -6,28 +6,20 @@ import { AnalysisPanel } from './AnalysisPanel';
 import { Board } from './Board';
 import { HandStrengthBadge } from './HandStrengthBadge';
 import { SeatView } from './Seat';
+import { OrnamentFrame } from './primitives/Ornament';
 
-// 楕円卓の 8 座席座標。視覚位置 0 = 自分 (下中央)。
-// 仕様 §11.2.2 + Ten-Four 風: 大きく安定したレイアウト。
-const VISUAL_POSITIONS: {
-  top: string;
-  left: string;
-  position: 'top' | 'side' | 'bottom';
-}[] = [
-  { top: '92%', left: '50%', position: 'bottom' }, // 0: あなた
-  { top: '78%', left: '18%', position: 'bottom' }, // 1
-  { top: '42%', left: '6%', position: 'side' }, // 2
-  { top: '12%', left: '20%', position: 'top' }, // 3
-  { top: '4%', left: '50%', position: 'top' }, // 4
-  { top: '12%', left: '80%', position: 'top' }, // 5
-  { top: '42%', left: '94%', position: 'side' }, // 6
-  { top: '78%', left: '82%', position: 'bottom' }, // 7
+// 楕円卓: 0 = 自分 (下中央) 〜 7 を時計回り。
+const VISUAL_POSITIONS: { top: string; left: string; position: 'top' | 'side' | 'bottom' }[] = [
+  { top: '92%', left: '50%', position: 'bottom' },
+  { top: '78%', left: '15%', position: 'bottom' },
+  { top: '42%', left: '4%', position: 'side' },
+  { top: '10%', left: '18%', position: 'top' },
+  { top: '2%', left: '50%', position: 'top' },
+  { top: '10%', left: '82%', position: 'top' },
+  { top: '42%', left: '96%', position: 'side' },
+  { top: '78%', left: '85%', position: 'bottom' },
 ];
 
-// felt: 緑のグラデーション + 木枠 + 微妙な光彩
-const FELT_GRADIENT = 'radial-gradient(ellipse at 50% 35%, #266a4d 0%, #1a4d36 45%, #0d2a1d 100%)';
-
-// yourSeat (実際の席番号) を視覚位置 0 (下) に対応付けるため、表示順序を回転する。
 function buildVisualOrder(yourSeat: Seat, seatCount = 8): Seat[] {
   const order: Seat[] = [];
   for (let i = 0; i < seatCount; i++) {
@@ -56,8 +48,9 @@ export function Table() {
 
   if (!state) {
     return (
-      <div className="flex items-center justify-center min-h-[40vh] text-sm text-slate-400">
-        準備中…
+      <div className="flex items-center justify-center min-h-[40vh] text-sm text-ivory-dim">
+        <span className="font-jp tracking-widest">準備中</span>
+        <span className="ml-2 font-display italic text-brass">Preparing the table…</span>
       </div>
     );
   }
@@ -67,60 +60,73 @@ export function Table() {
   const visualOrder = buildVisualOrder(yourSeat);
 
   return (
-    <div className="flex flex-col items-center gap-3 w-full">
-      {/* 卓情報バー */}
-      <div className="text-[11px] text-slate-400 flex items-center gap-3 flex-wrap justify-center">
-        <span>
-          ハンド #{handsPlayed + 1} · {state.players.size} 人 · ブラインド {state.sb}/{state.bb}
+    <div className="flex flex-col items-center gap-3 sm:gap-4 w-full">
+      {/* 卓ステータスバー */}
+      <div className="text-[11px] text-ivory-dim flex items-center gap-4 flex-wrap justify-center brass-surface rounded-full px-4 py-1">
+        <span className="font-display italic tracking-widest">
+          Hand <span className="brass-text font-bold">#{handsPlayed + 1}</span>
+        </span>
+        <span className="opacity-50">·</span>
+        <span className="font-jp tracking-wider">
+          {state.players.size} <span className="text-ivory-muted">人</span>
+        </span>
+        <span className="opacity-50">·</span>
+        <span className="font-mono-tabular tracking-wide">
+          {state.sb}/{state.bb} <span className="text-ivory-muted">bb</span>
         </span>
       </div>
 
       {/* 楕円卓 */}
-      <div
-        className="relative w-full max-w-4xl aspect-[5/4] sm:aspect-[16/10] rounded-[40%] sm:rounded-[35%] border-[6px] sm:border-8 border-amber-950 shadow-[0_15px_50px_-10px_rgba(0,0,0,0.7)] overflow-hidden"
-        style={{ background: FELT_GRADIENT }}
-      >
-        {/* インナーリング (felt の段差) */}
-        <div className="absolute inset-2 rounded-[38%] sm:rounded-[33%] border border-amber-800/30 pointer-events-none" />
+      <div className="relative w-full max-w-4xl">
+        {/* brass rim outer */}
+        <div className="relative w-full aspect-[5/4] sm:aspect-[16/10] rounded-[44%] sm:rounded-[38%] p-[6px] sm:p-[8px] brass-rim shadow-felt">
+          {/* dark inner shadow ring */}
+          <div className="absolute inset-[6px] sm:inset-[8px] rounded-[42%] sm:rounded-[36%] shadow-[inset_0_4px_10px_rgba(0,0,0,0.5)] pointer-events-none z-20" />
 
-        {/* 中央: Board + Pot */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-          <Board state={state} />
-        </div>
+          {/* felt surface */}
+          <div className="relative w-full h-full rounded-[42%] sm:rounded-[36%] felt-surface overflow-hidden">
+            <OrnamentFrame size={28} inset={20} />
 
-        {/* 席（自分が常に下） */}
-        {VISUAL_POSITIONS.map((pos, idx) => {
-          const seat = visualOrder[idx];
-          if (seat === undefined) return null;
-          const player = state.players.get(seat);
-          const isYou = seat === yourSeat;
-          const isToAct = state.toAct === seat;
-          const isButton = state.buttonSeat === seat;
-          const label = isYou ? 'あなた' : (cpuNames.get(seat) ?? `Seat ${seat}`);
-          return (
-            <div
-              key={seat}
-              className="absolute -translate-x-1/2 -translate-y-1/2"
-              style={{ top: pos.top, left: pos.left }}
-            >
-              <SeatView
-                seat={seat}
-                player={player}
-                isYou={isYou}
-                isButton={isButton}
-                isToAct={isToAct}
-                showdownRevealed={showdownRevealed}
-                label={label}
-                remainingMs={isToAct ? remainingMs : 0}
-                totalMs={isToAct ? actionTotal : 0}
-                position={pos.position}
-              />
+            {/* center: Board + Pot */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+              <Board state={state} />
             </div>
-          );
-        })}
+
+            {/* seats */}
+            {VISUAL_POSITIONS.map((pos, idx) => {
+              const seat = visualOrder[idx];
+              if (seat === undefined) return null;
+              const player = state.players.get(seat);
+              const isYou = seat === yourSeat;
+              const isToAct = state.toAct === seat;
+              const isButton = state.buttonSeat === seat;
+              const label = isYou ? 'You' : (cpuNames.get(seat) ?? `Seat ${seat}`);
+              return (
+                <div
+                  key={seat}
+                  className="absolute -translate-x-1/2 -translate-y-1/2 z-30"
+                  style={{ top: pos.top, left: pos.left }}
+                >
+                  <SeatView
+                    seat={seat}
+                    player={player}
+                    isYou={isYou}
+                    isButton={isButton}
+                    isToAct={isToAct}
+                    showdownRevealed={showdownRevealed}
+                    label={label}
+                    remainingMs={isToAct ? remainingMs : 0}
+                    totalMs={isToAct ? actionTotal : 0}
+                    position={pos.position}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
-      {/* あなたの役 (ハンド強度) */}
+      {/* あなたの役 (verdict card) */}
       {yourPlayer && (
         <HandStrengthBadge
           holeCards={
@@ -132,30 +138,32 @@ export function Table() {
         />
       )}
 
-      {/* 勝者表示 */}
+      {/* 勝者ペナント */}
       {winners && showdownRevealed && (
-        <div className="flex flex-col items-center gap-1">
+        <div className="flex flex-col items-center gap-2 animate-verdict">
           <div
-            className={`text-base font-bold px-4 py-1.5 rounded-lg border ${
+            className={`px-5 py-2 rounded-md border-2 font-display tracking-widest ${
               youWon
-                ? 'bg-emerald-500/20 border-emerald-400/60 text-emerald-200'
-                : 'bg-slate-800/70 border-slate-700 text-slate-300'
+                ? 'bg-gradient-to-b from-jade/30 to-jade/10 border-jade/60 text-jade-glow shadow-[0_0_30px_rgba(110,231,183,0.3)]'
+                : 'bg-gradient-to-b from-ink-deep to-ink border-brass/30 text-ivory-dim'
             }`}
           >
-            {youWon ? '🏆 あなたの勝ち！' : 'ハンド終了'}
+            <span className="text-base sm:text-lg font-bold">
+              {youWon ? '✦ あなたの勝ち ✦' : 'Hand Concluded'}
+            </span>
           </div>
-          <div className="text-[11px] text-slate-300 flex gap-2 flex-wrap justify-center max-w-md">
+          <div className="text-[11px] font-mono-tabular text-ivory-dim flex gap-2 flex-wrap justify-center max-w-md">
             {winners.map((w, i) => (
               <span
                 // biome-ignore lint/suspicious/noArrayIndexKey: 単純列挙
                 key={i}
-                className={`px-2 py-0.5 rounded ${
+                className={`px-2 py-0.5 rounded border ${
                   w.seat === yourSeat
-                    ? 'bg-emerald-500/15 text-emerald-200'
-                    : 'bg-slate-800 text-slate-200'
+                    ? 'bg-jade/10 text-jade-glow border-jade/40'
+                    : 'bg-ink-deep/70 text-ivory-dim border-ink-line/60'
                 }`}
               >
-                seat {w.seat}: +{w.amount}
+                seat {w.seat} <span className="brass-text">+{w.amount}</span>
               </span>
             ))}
           </div>

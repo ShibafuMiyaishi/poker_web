@@ -3,16 +3,28 @@ interface Props {
   totalMs: number;
 }
 
-// アクション残り時間のプログレスバー。0 になると枯れた色に。
+// アクション残り時間: brass→amber→crimson のグラデでカウントダウン感を強調。
 export function TimerBar({ remainingMs, totalMs }: Props) {
-  const pct = Math.max(0, Math.min(1, remainingMs / totalMs));
-  const color = pct < 0.3 ? 'bg-lose' : pct < 0.6 ? 'bg-yellow-500' : 'bg-accent';
+  const pct = totalMs > 0 ? Math.max(0, Math.min(1, remainingMs / totalMs)) : 0;
+  const seconds = (remainingMs / 1000).toFixed(1);
+  const fill =
+    pct < 0.3
+      ? 'bg-gradient-to-r from-crimson to-crimson-glow'
+      : pct < 0.6
+        ? 'bg-gradient-to-r from-brass-deep to-brass-light'
+        : 'bg-gradient-to-r from-brass to-brass-glow';
+
   return (
-    <div className="absolute -bottom-1 left-1 right-1 h-1 rounded bg-slate-800 overflow-hidden">
-      <div
-        className={`h-full transition-[width] duration-100 ease-linear ${color}`}
-        style={{ width: `${pct * 100}%` }}
-      />
+    <div className="w-full">
+      <div className="relative h-1.5 rounded-full bg-ink-deep/80 overflow-hidden border border-brass/20">
+        <div
+          className={`h-full ${fill} transition-[width] duration-100 ease-linear`}
+          style={{ width: `${pct * 100}%` }}
+        />
+      </div>
+      <div className="flex justify-end text-[9px] font-mono-tabular text-ivory-dim mt-0.5 tracking-widest">
+        {seconds}s
+      </div>
     </div>
   );
 }

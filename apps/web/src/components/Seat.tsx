@@ -14,16 +14,13 @@ interface Props {
   label: string;
   remainingMs: number;
   totalMs: number;
-  // 配置位置: "top" / "bottom" でカード上方/下方の配置を変える
   position?: 'top' | 'side' | 'bottom';
 }
 
-// avatar 1 文字を seat 番号 or 名前から作る
 function initial(label: string): string {
   return (label[0] ?? '?').toUpperCase();
 }
 
-// 数字を bb 単位の短縮表示（1000 → 1k）
 function shortStack(n: number): string {
   if (n >= 10_000) return `${Math.floor(n / 1000)}k`;
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
@@ -40,11 +37,10 @@ export function SeatView({
   label,
   remainingMs,
   totalMs,
-  position = 'side',
 }: Props) {
   if (!player) {
     return (
-      <div className="text-[10px] text-slate-500 px-2 py-1 rounded bg-slate-900/40 border border-slate-800 w-20 text-center">
+      <div className="text-[10px] text-ivory-muted px-2 py-1 rounded bg-ink-deep/60 border border-ink-line/60 w-20 text-center font-display italic">
         seat {seat}
       </div>
     );
@@ -54,44 +50,52 @@ export function SeatView({
   const reveal = isYou || (showdownRevealed && status !== 'folded');
   const folded = status === 'folded';
   const allin = status === 'allin';
-
   const cardSize = isYou ? 'md' : 'sm';
 
-  const ring = isToAct
-    ? 'ring-2 ring-amber-400 shadow-[0_0_18px_rgba(251,191,36,0.45)] bg-slate-900/95'
+  // 状態ごとの枠線・glow
+  const frame = isToAct
+    ? 'border-brass/80 shadow-[0_0_0_2px_rgba(245,215,122,0.45),0_0_30px_rgba(245,215,122,0.35)] bg-gradient-to-b from-ink/95 to-felt-deep/90 animate-act'
     : isYou
-      ? 'ring-1 ring-blue-400/60 bg-slate-900/85'
-      : 'ring-1 ring-slate-700 bg-slate-900/75';
+      ? 'border-brass/35 bg-gradient-to-b from-ink-deep/95 to-ink/95'
+      : 'border-ink-line/70 bg-gradient-to-b from-ink-deep/90 to-ink/85';
 
-  const avatarColor = isYou ? 'bg-blue-600' : 'bg-slate-700';
+  const avatarRing = isYou
+    ? 'bg-gradient-to-br from-brass-light to-brass-deep text-ink-deepest'
+    : 'bg-gradient-to-br from-ink-soft to-ink-line text-bone';
 
   return (
     <div
-      className={`relative flex flex-col items-center rounded-xl px-2 py-2 transition-all ${ring} ${folded ? 'opacity-50' : ''}`}
+      className={`relative flex flex-col items-center rounded-xl px-2 py-2 border-2 transition-all ${frame} ${
+        folded ? 'opacity-45' : ''
+      }`}
     >
-      {/* Avatar + 名前 + スタック */}
+      {/* button dealer marker (right corner) */}
+      {isButton && (
+        <div
+          className="absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-display font-bold bg-gradient-to-br from-brass-glow to-brass-deep text-ink-deepest border-2 border-ink-deep shadow-[0_2px_8px_rgba(245,215,122,0.6)]"
+          title="ディーラーボタン"
+        >
+          D
+        </div>
+      )}
+
+      {/* avatar + name + stack */}
       <div className="flex items-center gap-2 w-full">
         <div
-          className={`w-7 h-7 rounded-full ${avatarColor} flex items-center justify-center text-xs font-bold text-white shrink-0`}
+          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs font-display font-bold shrink-0 border border-brass/30 ${avatarRing}`}
         >
           {initial(label)}
         </div>
-        <div className="flex flex-col leading-tight min-w-0">
-          <div className="text-[11px] font-semibold truncate max-w-[80px]">{label}</div>
-          <div className="text-[10px] text-slate-300 tabular-nums">{shortStack(player.stack)}</div>
-        </div>
-        {isButton && (
-          <div
-            className="ml-auto w-5 h-5 rounded-full bg-amber-300 text-slate-900 text-[10px] font-bold flex items-center justify-center shrink-0"
-            title="ボタン"
-          >
-            D
+        <div className="flex flex-col leading-tight min-w-0 flex-1">
+          <div className="text-[11px] font-display font-semibold truncate text-ivory">{label}</div>
+          <div className="text-[10px] font-mono-tabular text-brass tracking-wide">
+            {shortStack(player.stack)}
           </div>
-        )}
+        </div>
       </div>
 
-      {/* カード */}
-      <div className={`flex gap-0.5 ${position === 'top' ? 'mt-0.5 mb-1' : 'mt-1.5'}`}>
+      {/* cards */}
+      <div className={`flex gap-0.5 mt-1.5 ${isYou ? 'scale-105' : ''}`}>
         <div className="animate-deal">
           <Card
             card={reveal ? player.holeCards[0] : undefined}
@@ -100,7 +104,7 @@ export function SeatView({
             highlight={isToAct}
           />
         </div>
-        <div className="animate-deal" style={{ animationDelay: '60ms' }}>
+        <div className="animate-deal" style={{ animationDelay: '70ms' }}>
           <Card
             card={reveal ? player.holeCards[1] : undefined}
             hidden={!reveal}
@@ -110,28 +114,28 @@ export function SeatView({
         </div>
       </div>
 
-      {/* ステータスバッジ */}
+      {/* status overlay badges */}
       {folded && (
-        <div className="absolute top-1 right-2 text-[9px] font-bold text-slate-400 tracking-widest">
+        <div className="absolute top-1 left-1/2 -translate-x-1/2 text-[9px] font-display italic tracking-widest text-ivory-muted bg-ink-deepest/80 px-2 py-0.5 rounded">
           FOLD
         </div>
       )}
       {allin && (
-        <div className="absolute top-1 right-2 text-[9px] font-bold text-yellow-400 tracking-widest">
+        <div className="absolute top-1 left-1/2 -translate-x-1/2 text-[9px] font-display font-bold tracking-widest text-brass-glow bg-ink-deepest/80 px-2 py-0.5 rounded border border-brass/40">
           ALL-IN
         </div>
       )}
 
-      {/* 現ベット (chip stack) */}
+      {/* current bet (chip + amount) */}
       {player.currentBet > 0 && (
-        <div className="mt-1">
+        <div className="mt-1.5">
           <ChipStack amount={player.currentBet} compact />
         </div>
       )}
 
-      {/* タイマー */}
+      {/* timer */}
       {isToAct && totalMs > 0 && (
-        <div className="w-full mt-1">
+        <div className="w-full mt-1.5">
           <TimerBar remainingMs={remainingMs} totalMs={totalMs} />
         </div>
       )}

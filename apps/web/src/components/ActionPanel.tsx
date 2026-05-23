@@ -4,8 +4,15 @@ import { handDriver } from '../lib/handDriver';
 import { serverDriver } from '../lib/serverDriver';
 import { useTableStore } from '../stores/tableStore';
 
-// 大型カラーボタン + ベットスライダー + 1/3 / 1/2 / 2/3 / pot / all-in クイック。
-// 仕様 §11.2.2 のアクション UI を視認性重視に書き換え。
+// "Botanical Casino" 風: 真鍮CTA + 朱・翡翠・骨色のアクセント。
+// 仕様 §11.2.2 のアクション UI、bet スライダー + 5 つの quick chip。
+//
+// Button hierarchy:
+//   FOLD = 朱 crimson (危険/降車)
+//   CHECK = 骨色 bone (中立)
+//   CALL = 翡翠 jade (前進)
+//   BET/RAISE = brass / 真鍮 (主アクション)
+//   ALL-IN = brass-glow / 警告金 (最終手段)
 export function ActionPanel() {
   const state = useTableStore((s) => s.state);
   const yourSeat = useTableStore((s) => s.yourSeat);
@@ -27,12 +34,11 @@ export function ActionPanel() {
   const minRaiseTotal = raise?.minAmount ?? bet?.minAmount ?? state?.bb ?? 10;
   const maxRaiseTotal = raise?.maxAmount ?? bet?.maxAmount ?? 0;
 
-  // betValue は手番開始ごとに「2/3 pot か minRaise」初期化
   const [betValue, setBetValue] = useState<number>(minRaiseTotal);
 
   const handId = state?.handId;
   const toActSeat = state?.toAct;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: 手番切替時のみ初期化したい
+  // biome-ignore lint/correctness/useExhaustiveDependencies: 手番切替時のみ初期化
   useEffect(() => {
     if (!isYourTurn || !state || !player) return;
     const defaultBet = Math.max(
@@ -47,20 +53,30 @@ export function ActionPanel() {
     else void handDriver.submitHumanAction(action);
   };
 
-  // 手番でない場合: 状況メッセージ + 「次のハンドへ」ボタン (ファストフォールド)
+  // 手番でない場合
   if (!isYourTurn || !state || !player) {
     return (
       <div className="mt-3 flex flex-col items-center gap-2">
-        <div className="text-xs sm:text-sm text-slate-400 text-center">
-          {status === 'between_hands' && winners ? '⏱ 次のハンドへ…' : '相手の手番'}
+        <div className="text-[11px] sm:text-xs text-ivory-dim text-center flex items-center gap-2">
+          {status === 'between_hands' && winners ? (
+            <>
+              <span className="font-jp tracking-widest">次のハンドへ</span>
+              <span className="font-display italic text-brass">Next hand…</span>
+            </>
+          ) : (
+            <>
+              <span className="font-jp tracking-widest">相手の手番</span>
+              <span className="font-display italic text-ivory-muted">Awaiting action…</span>
+            </>
+          )}
         </div>
         {status === 'between_hands' && mode === 'local' && (
           <button
             type="button"
             onClick={() => handDriver.skipToNextHand()}
-            className="min-h-[44px] px-5 rounded-lg bg-blue-600 hover:bg-blue-500 font-semibold text-white shadow-md"
+            className="min-h-[44px] px-6 rounded-md font-display tracking-widest text-sm brass-surface text-ivory hover:brightness-110 transition"
           >
-            次のハンドへ ▶
+            次のハンドへ ▸
           </button>
         )}
       </div>
@@ -71,11 +87,10 @@ export function ActionPanel() {
   const canBetOrRaise = !!(raise || bet);
   const isRaise = !!raise;
 
-  // クイックベット候補
   const quickFractions: { label: string; frac: number }[] = [
-    { label: '1/3', frac: 1 / 3 },
-    { label: '1/2', frac: 0.5 },
-    { label: '2/3', frac: 2 / 3 },
+    { label: '⅓', frac: 1 / 3 },
+    { label: '½', frac: 0.5 },
+    { label: '⅔', frac: 2 / 3 },
     { label: 'POT', frac: 1 },
   ];
 
@@ -92,38 +107,35 @@ export function ActionPanel() {
       {/* メインアクション行 */}
       <div className="grid grid-cols-3 sm:flex sm:flex-wrap sm:justify-center gap-2">
         {has('fold') && (
-          <button
-            type="button"
+          <ActionButton
+            kind="crimson"
+            label="FOLD"
+            sub="降りる"
             onClick={() => submit({ seat: yourSeat, type: 'fold' })}
-            className="h-12 sm:h-14 rounded-lg bg-rose-700 hover:bg-rose-600 active:bg-rose-800 font-bold text-white shadow-md transition flex flex-col items-center justify-center"
-          >
-            <span className="text-sm">FOLD</span>
-            <span className="text-[10px] opacity-80">降りる</span>
-          </button>
+          />
         )}
         {has('check') && (
-          <button
-            type="button"
+          <ActionButton
+            kind="bone"
+            label="CHECK"
+            sub="チェック"
             onClick={() => submit({ seat: yourSeat, type: 'check' })}
-            className="h-12 sm:h-14 rounded-lg bg-slate-600 hover:bg-slate-500 active:bg-slate-700 font-bold text-white shadow-md transition flex flex-col items-center justify-center"
-          >
-            <span className="text-sm">CHECK</span>
-            <span className="text-[10px] opacity-80">チェック</span>
-          </button>
+          />
         )}
         {has('call') && (
-          <button
-            type="button"
+          <ActionButton
+            kind="jade"
+            label="CALL"
+            sub={toCall.toString()}
             onClick={() => submit({ seat: yourSeat, type: 'call' })}
-            className="h-12 sm:h-14 rounded-lg bg-blue-600 hover:bg-blue-500 active:bg-blue-700 font-bold text-white shadow-md transition flex flex-col items-center justify-center"
-          >
-            <span className="text-sm">CALL</span>
-            <span className="text-[10px] opacity-80 tabular-nums">{toCall}</span>
-          </button>
+          />
         )}
         {canBetOrRaise && (
-          <button
-            type="button"
+          <ActionButton
+            kind="brass"
+            label={isRaise ? 'RAISE' : 'BET'}
+            sub={`to ${betValue}`}
+            wide
             disabled={betValue < minRaiseTotal || betValue > maxRaiseTotal}
             onClick={() =>
               submit(
@@ -132,49 +144,57 @@ export function ActionPanel() {
                   : { seat: yourSeat, type: 'bet', amount: betValue },
               )
             }
-            className="h-12 sm:h-14 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-40 font-bold text-white shadow-md transition flex flex-col items-center justify-center col-span-2 sm:col-span-1"
-          >
-            <span className="text-sm">{isRaise ? 'RAISE' : 'BET'}</span>
-            <span className="text-[10px] opacity-90 tabular-nums">to {betValue}</span>
-          </button>
+          />
         )}
         {has('all_in') && !canBetOrRaise && (
-          <button
-            type="button"
+          <ActionButton
+            kind="brass-glow"
+            label="ALL-IN"
+            sub={player.stack.toString()}
             onClick={() => submit({ seat: yourSeat, type: 'all_in' })}
-            className="h-12 sm:h-14 rounded-lg bg-amber-500 hover:bg-amber-400 active:bg-amber-600 font-bold text-slate-900 shadow-md transition flex flex-col items-center justify-center"
-          >
-            <span className="text-sm">ALL-IN</span>
-            <span className="text-[10px] opacity-80 tabular-nums">{player.stack}</span>
-          </button>
+          />
         )}
       </div>
 
-      {/* ベットスライダー + クイックボタン */}
+      {/* ベットスライダー + クイックチップ */}
       {canBetOrRaise && minRaiseTotal < maxRaiseTotal && (
-        <div className="flex flex-col gap-2 px-2 py-2 rounded-lg bg-slate-900/60 border border-slate-800">
-          <input
-            type="range"
-            min={minRaiseTotal}
-            max={maxRaiseTotal}
-            step={Math.max(1, Math.floor((maxRaiseTotal - minRaiseTotal) / 100))}
-            value={betValue}
-            onChange={(e) => setBetValue(Number.parseInt(e.target.value, 10))}
-            className="w-full h-6 accent-emerald-500 cursor-pointer"
-            aria-label="ベット額スライダー"
-          />
-          <div className="flex items-center justify-between text-[10px] text-slate-400 tabular-nums">
-            <span>min {minRaiseTotal}</span>
-            <span className="text-base font-bold text-emerald-300">{betValue}</span>
-            <span>max {maxRaiseTotal}</span>
+        <div className="flex flex-col gap-2 px-3 py-2.5 rounded-md border border-brass/25 bg-gradient-to-b from-ink-deep/95 to-ink/95 shadow-card">
+          {/* スライダー */}
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-display italic text-ivory-muted shrink-0 tabular-nums">
+              {minRaiseTotal}
+            </span>
+            <input
+              type="range"
+              min={minRaiseTotal}
+              max={maxRaiseTotal}
+              step={Math.max(1, Math.floor((maxRaiseTotal - minRaiseTotal) / 100))}
+              value={betValue}
+              onChange={(e) => setBetValue(Number.parseInt(e.target.value, 10))}
+              className="flex-1 h-6"
+              aria-label="ベット額スライダー"
+            />
+            <span className="text-[10px] font-display italic text-ivory-muted shrink-0 tabular-nums">
+              {maxRaiseTotal}
+            </span>
           </div>
-          <div className="grid grid-cols-5 gap-1">
+
+          {/* 中央の現在値 */}
+          <div className="flex justify-center items-baseline gap-2">
+            <span className="font-jp text-[10px] text-ivory-dim tracking-wider">ベット額</span>
+            <span className="brass-text font-display text-2xl sm:text-3xl font-bold tabular-nums leading-none">
+              {betValue.toLocaleString()}
+            </span>
+          </div>
+
+          {/* クイックチップボタン */}
+          <div className="grid grid-cols-5 gap-1.5">
             {quickFractions.map(({ label, frac }) => (
               <button
                 key={label}
                 type="button"
                 onClick={() => setQuickBet(frac)}
-                className="h-9 rounded bg-slate-800 hover:bg-slate-700 text-xs font-semibold"
+                className="h-9 rounded border border-brass/25 bg-ink-deep/80 hover:bg-ink/80 hover:border-brass/50 text-xs font-display font-semibold text-ivory transition"
               >
                 {label}
               </button>
@@ -182,13 +202,53 @@ export function ActionPanel() {
             <button
               type="button"
               onClick={() => setBetValue(maxRaiseTotal)}
-              className="h-9 rounded bg-amber-600 hover:bg-amber-500 text-xs font-bold text-white"
+              className="h-9 rounded brass-surface text-xs font-display font-bold text-ivory tracking-wider hover:brightness-110 transition"
             >
-              ALL-IN
+              MAX
             </button>
           </div>
         </div>
       )}
     </div>
+  );
+}
+
+// --- 内部コンポーネント ---
+
+interface ActionButtonProps {
+  kind: 'crimson' | 'bone' | 'jade' | 'brass' | 'brass-glow';
+  label: string;
+  sub: string;
+  onClick: () => void;
+  disabled?: boolean;
+  wide?: boolean;
+}
+
+const KIND_STYLE: Record<ActionButtonProps['kind'], string> = {
+  crimson:
+    'bg-gradient-to-b from-crimson to-[#7e1c1c] border border-crimson/40 text-ivory hover:brightness-110',
+  bone: 'bg-gradient-to-b from-ink-soft to-ink border border-bone/30 text-ivory hover:brightness-125',
+  jade: 'bg-gradient-to-b from-jade to-[#2f6a52] border border-jade/40 text-ivory hover:brightness-110',
+  brass:
+    'bg-gradient-to-b from-brass-light to-brass-deep border border-brass-glow/50 text-ink-deepest font-bold hover:brightness-110 shadow-brass',
+  'brass-glow':
+    'bg-gradient-to-b from-brass-glow via-brass-light to-brass border-2 border-brass-glow text-ink-deepest font-bold hover:brightness-110 shadow-[0_0_20px_rgba(245,215,122,0.5)]',
+};
+
+function ActionButton({ kind, label, sub, onClick, disabled, wide }: ActionButtonProps) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={`h-12 sm:h-14 rounded-md transition flex flex-col items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed ${
+        wide ? 'col-span-2 sm:col-span-1' : ''
+      } ${KIND_STYLE[kind]}`}
+    >
+      <span className="font-display text-sm sm:text-base tracking-widest leading-none">
+        {label}
+      </span>
+      <span className="text-[10px] font-mono-tabular opacity-85 tracking-wide mt-0.5">{sub}</span>
+    </button>
   );
 }
