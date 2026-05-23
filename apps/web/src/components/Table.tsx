@@ -30,16 +30,17 @@ const VISUAL_POSITIONS_DESKTOP: {
   { top: '77%', left: '86%', position: 'bottom' },
 ];
 
-// モバイル向け: 席が中央 board に被らないよう外周に追いやる + compact 化。
+// モバイル向け: 席を表示領域内に確実に収める (上下端が viewport で見切れない)。
+// R3 のフィードバックを受けて -8% / -4% / 97% / 104% の外側位置を内側に寄せた。
 const VISUAL_POSITIONS_MOBILE: typeof VISUAL_POSITIONS_DESKTOP = [
-  { top: '97%', left: '50%', position: 'bottom' },
-  { top: '83%', left: '6%', position: 'bottom' },
-  { top: '50%', left: '-4%', position: 'side' },
-  { top: '6%', left: '6%', position: 'top' },
-  { top: '-8%', left: '50%', position: 'top' },
-  { top: '6%', left: '94%', position: 'top' },
-  { top: '50%', left: '104%', position: 'side' },
-  { top: '83%', left: '94%', position: 'bottom' },
+  { top: '90%', left: '50%', position: 'bottom' }, // 0: あなた
+  { top: '76%', left: '12%', position: 'bottom' }, // 1
+  { top: '50%', left: '4%', position: 'side' }, // 2
+  { top: '14%', left: '12%', position: 'top' }, // 3
+  { top: '6%', left: '50%', position: 'top' }, // 4: top-center, 上端から十分内側
+  { top: '14%', left: '88%', position: 'top' }, // 5
+  { top: '50%', left: '96%', position: 'side' }, // 6
+  { top: '76%', left: '88%', position: 'bottom' }, // 7
 ];
 
 function buildVisualOrder(yourSeat: Seat, seatCount = 8): Seat[] {
@@ -169,7 +170,7 @@ export function Table() {
         })}
       </div>
 
-      {/* あなたの役 (浮世絵スタンプ) */}
+      {/* あなたの役 (浮世絵スタンプ): フォールド中は非表示 */}
       {yourPlayer && (
         <HandStrengthBadge
           holeCards={
@@ -178,6 +179,7 @@ export function Table() {
               : null
           }
           board={state.board}
+          folded={yourPlayer.status === 'folded'}
         />
       )}
 

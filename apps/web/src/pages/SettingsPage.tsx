@@ -22,10 +22,17 @@ export function SettingsPage({ onLogout }: Props) {
               <span className="font-jp text-ivory-muted w-20 shrink-0">ハンドル</span>
               <span className="font-display text-ivory text-base">{user.handle}</span>
             </div>
-            <div className="flex items-baseline gap-2">
-              <span className="font-jp text-ivory-muted w-20 shrink-0">ID</span>
-              <span className="font-mono-tabular text-[10px] text-ivory-dim">{user.id}</span>
-            </div>
+            <details className="text-[10px]">
+              <summary className="cursor-pointer font-jp text-ivory-muted hover:text-brass tracking-widest select-none">
+                ID を表示 ▾
+              </summary>
+              <div className="mt-1 flex items-baseline gap-2">
+                <span className="font-jp text-ivory-muted w-20 shrink-0">ID</span>
+                <span className="font-mono-tabular text-[10px] text-ivory-dim break-all">
+                  {user.id}
+                </span>
+              </div>
+            </details>
           </div>
         ) : (
           <p className="text-xs text-ivory-muted font-jp">未ログイン</p>

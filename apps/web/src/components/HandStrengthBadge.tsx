@@ -5,6 +5,8 @@ import { useMemo } from 'react';
 interface Props {
   holeCards: readonly [Card, Card] | null;
   board: readonly Card[];
+  // フォールド中はバッジを非表示にする (本人がもう降りたハンドの役を見せない)
+  folded?: boolean;
 }
 
 // HandStrengthBadge v4:
@@ -40,10 +42,11 @@ const STRENGTH_LEVEL: Record<string, number> = {
   'Royal Flush': 9,
 };
 
-export function HandStrengthBadge({ holeCards, board }: Props) {
+export function HandStrengthBadge({ holeCards, board, folded = false }: Props) {
   const info = useMemo(() => {
     if (!holeCards) return null;
     if (board.length < 3) return null;
+    if (folded) return null; // 降りた手の役は表示しない
 
     const all = [holeCards[0], holeCards[1], ...board];
     try {
@@ -57,7 +60,7 @@ export function HandStrengthBadge({ holeCards, board }: Props) {
     } catch {
       return null;
     }
-  }, [holeCards, board]);
+  }, [holeCards, board, folded]);
 
   if (!info) return null;
 
