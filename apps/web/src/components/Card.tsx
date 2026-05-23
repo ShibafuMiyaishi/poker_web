@@ -1,9 +1,13 @@
 import type { Card as CardType } from '@pokergo/shared';
 
-// 「上質ラウンジ」のカード:
-// - 表: 骨色 (#f4ecd8) のクリーム地 + serif 風 rank + suit color (赤/黒)
-// - 裏: 深緑 felt + brass の交差ライン文様 (PokerStars / GG の重厚感)
-// - highlight prop で手番の glow を加える
+// Pokergo "Botanical Casino" カード:
+//
+// 表: 骨色 (#fafafa→#ede2c6) のクリーム地 + Fraunces serif rank + 朱/墨 の suit。
+// 裏: **深紺** + brass の交差線 + 中央メダリオン。
+//   緑 felt と高コントラストになるよう、前回の深緑系から navy 系へ変更。
+//   PokerStars (赤) / GGPoker (紺) を参考に「felt と対比する色」を採用。
+//
+// 4 サイズ + highlight glow。
 
 const SUIT_GLYPH: Record<string, string> = { s: '♠', h: '♥', d: '♦', c: '♣' };
 
@@ -38,18 +42,16 @@ export function Card({ card, hidden = false, size = 'md', highlight = false }: P
         aria-label="伏せ"
       >
         <defs>
+          {/* 深紺ベース (felt と対比) */}
           <linearGradient id="cb-bg" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#1d8158" />
-            <stop offset="55%" stopColor="#155a3f" />
-            <stop offset="100%" stopColor="#0a2f22" />
+            <stop offset="0%" stopColor="#1a2240" />
+            <stop offset="50%" stopColor="#0e1428" />
+            <stop offset="100%" stopColor="#050a18" />
           </linearGradient>
-          <linearGradient id="cb-edge" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#f5d77a" />
-            <stop offset="100%" stopColor="#6f5520" />
-          </linearGradient>
-          <pattern id="cb-pat" width="8" height="8" patternUnits="userSpaceOnUse">
-            <path d="M 0 8 L 8 0" stroke="#c89f48" strokeWidth="0.5" opacity="0.35" />
-            <path d="M 0 0 L 8 8" stroke="#c89f48" strokeWidth="0.5" opacity="0.35" />
+          {/* brass 交差線パターン */}
+          <pattern id="cb-cross" width="6" height="6" patternUnits="userSpaceOnUse">
+            <path d="M 0 6 L 6 0" stroke="#c89f48" strokeWidth="0.4" opacity="0.55" />
+            <path d="M 0 0 L 6 6" stroke="#c89f48" strokeWidth="0.4" opacity="0.55" />
           </pattern>
         </defs>
         {/* base */}
@@ -60,50 +62,33 @@ export function Card({ card, hidden = false, size = 'md', highlight = false }: P
           height="76"
           rx="6"
           fill="url(#cb-bg)"
-          stroke="url(#cb-edge)"
-          strokeWidth="1.5"
+          stroke="#c89f48"
+          strokeWidth="1"
         />
-        {/* inner panel */}
-        <rect x="6" y="6" width="44" height="66" rx="3" fill="url(#cb-pat)" />
+        {/* inner panel: brass crosshatch */}
+        <rect x="5" y="5" width="46" height="68" rx="3.5" fill="url(#cb-cross)" />
         <rect
-          x="6"
-          y="6"
-          width="44"
-          height="66"
-          rx="3"
+          x="5"
+          y="5"
+          width="46"
+          height="68"
+          rx="3.5"
           fill="none"
-          stroke="#f5d77a"
-          strokeOpacity="0.55"
-          strokeWidth="0.6"
+          stroke="#c89f48"
+          strokeOpacity="0.7"
+          strokeWidth="0.55"
         />
-        {/* center diamond/seal */}
+        {/* 中央メダリオン (brass) */}
         <g transform="translate(28 39)">
+          <circle r="9" fill="none" stroke="#f5d77a" strokeWidth="0.7" opacity="0.9" />
           <polygon
-            points="0,-9 9,0 0,9 -9,0"
+            points="0,-7 7,0 0,7 -7,0"
             fill="none"
             stroke="#f5d77a"
-            strokeWidth="0.8"
-            opacity="0.7"
-          />
-          <polygon
-            points="0,-5 5,0 0,5 -5,0"
-            fill="none"
-            stroke="#f5d77a"
-            strokeWidth="0.5"
-            opacity="0.55"
-          />
-          <text
-            x="0"
-            y="2"
-            textAnchor="middle"
-            fontSize="9"
-            fontWeight="700"
-            fontFamily="Fraunces, serif"
-            fill="#f5d77a"
+            strokeWidth="0.7"
             opacity="0.85"
-          >
-            P
-          </text>
+          />
+          <polygon points="0,-4 4,0 0,4 -4,0" fill="#f5d77a" opacity="0.55" />
         </g>
       </svg>
     );
@@ -141,7 +126,7 @@ export function Card({ card, hidden = false, size = 'md', highlight = false }: P
         stroke="#a8997a"
         strokeWidth="0.6"
       />
-      {/* 微細な paper grain 模倣: うすく noise を重ねる */}
+      {/* 微細な紙質感 */}
       <rect x="1" y="1" width="54" height="76" rx="6" fill="#000" opacity="0.04" />
       {/* 左上 rank + suit (serif) */}
       <text
@@ -171,7 +156,7 @@ export function Card({ card, hidden = false, size = 'md', highlight = false }: P
         fontSize={dim.centerFs}
         fill={color}
         fontFamily="ui-sans-serif"
-        opacity="0.9"
+        opacity="0.92"
       >
         {glyph}
       </text>

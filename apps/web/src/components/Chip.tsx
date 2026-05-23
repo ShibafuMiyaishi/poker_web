@@ -1,5 +1,5 @@
-// 真鍮系のチップデザイン: edge は brass、中央は denomination カラー。
-// PokerStars/GGPoker 風だが less plastic, more lounge.
+// チップ: 真鍮 edge + denomination 中央色 + Mono ラベル。
+// compact モードは ink-deepest 背景の pill で felt 上でも数字が読める。
 
 interface Props {
   amount: number;
@@ -7,10 +7,10 @@ interface Props {
 }
 
 interface ChipPalette {
-  base: string; // 外周ベース
-  ring: string; // 外周明色
-  inner: string; // 中央
-  text: string; // ラベル色
+  base: string;
+  ring: string;
+  inner: string;
+  text: string;
 }
 
 function chipColors(amount: number): ChipPalette {
@@ -23,9 +23,12 @@ function chipColors(amount: number): ChipPalette {
   return { base: '#3b4a3e', ring: '#cbd5e1', inner: '#52615a', text: '#fbf7ed' };
 }
 
-// 短縮表記 (ラベル用)
 function shortLabel(amount: number): string {
-  if (amount >= 1000) return `${Math.floor(amount / 100) / 10}k`.replace('.0', '');
+  if (amount >= 10_000) return `${Math.floor(amount / 1000)}k`;
+  if (amount >= 1000) {
+    const k = amount / 1000;
+    return Number.isInteger(k) ? `${k}k` : `${k.toFixed(1)}k`;
+  }
   return amount.toString();
 }
 
@@ -40,10 +43,8 @@ export function Chip({ amount, size = 24 }: Props) {
       aria-label={`chip ${amount}`}
       className="drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
     >
-      {/* 外円 (brass edge ring) */}
       <circle cx="16" cy="16" r="15" fill={base} />
       <circle cx="16" cy="16" r="15" fill="none" stroke="#c89f48" strokeWidth="0.6" opacity="0.5" />
-      {/* 6 本の縞 (denomination color) */}
       {[0, 60, 120, 180, 240, 300].map((deg) => (
         <rect
           key={deg}
@@ -56,10 +57,8 @@ export function Chip({ amount, size = 24 }: Props) {
           transform={`rotate(${deg} 16 16)`}
         />
       ))}
-      {/* 内円ベース */}
       <circle cx="16" cy="16" r="10.5" fill={ring} opacity="0.18" />
       <circle cx="16" cy="16" r="9.5" fill={inner} />
-      {/* 細い brass ライン */}
       <circle
         cx="16"
         cy="16"
@@ -69,7 +68,6 @@ export function Chip({ amount, size = 24 }: Props) {
         strokeWidth="0.5"
         opacity="0.6"
       />
-      {/* 額面ラベル (sm 以上で見やすい) */}
       {size >= 22 && (
         <text
           x="16"
@@ -88,7 +86,7 @@ export function Chip({ amount, size = 24 }: Props) {
   );
 }
 
-// 物理的に積み上げるチップスタック
+// Physical chip stack — denominations color-mixed, visible offset.
 function decomposeChips(amount: number): number[] {
   if (amount <= 0) return [];
   const denoms = [1000, 500, 100, 25, 5, 1];
@@ -110,14 +108,16 @@ interface ChipStackProps {
   showLabel?: boolean;
 }
 
+// 「現ベット額」表示用の compact pill: ink-deepest 背景 + brass border で
+// 緑 felt 上でも視認性が極めて高い。
 export function ChipStack({ amount, compact = false, showLabel = true }: ChipStackProps) {
   if (amount <= 0) return null;
   if (compact) {
     return (
-      <div className="flex items-center gap-1.5">
-        <Chip amount={amount} size={18} />
+      <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-ink-deepest/95 border border-brass/40 shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+        <Chip amount={amount} size={14} />
         {showLabel && (
-          <span className="text-[11px] font-mono-tabular font-semibold text-ivory">
+          <span className="text-[11px] font-mono-tabular font-bold text-brass-light tracking-wide tabular-nums">
             {amount.toLocaleString()}
           </span>
         )}
@@ -127,19 +127,23 @@ export function ChipStack({ amount, compact = false, showLabel = true }: ChipSta
   const stack = decomposeChips(amount);
   return (
     <div className="flex flex-col items-center animate-chip-toss">
-      <div className="relative w-8 h-10" aria-label={`chip stack ${amount}`}>
+      <div
+        className="relative w-7"
+        style={{ height: `${stack.length * 4 + 20}px` }}
+        aria-label={`chip stack ${amount}`}
+      >
         {stack.map((d, i) => (
           <div
             key={`${i}-${d}`}
             className="absolute left-1/2 -translate-x-1/2"
-            style={{ bottom: i * 2.2 }}
+            style={{ bottom: i * 4 }}
           >
-            <Chip amount={d} size={26} />
+            <Chip amount={d} size={24} />
           </div>
         ))}
       </div>
       {showLabel && (
-        <span className="text-[11px] font-mono-tabular font-semibold text-ivory mt-1 tracking-wide">
+        <span className="text-[11px] font-mono-tabular font-semibold text-ivory mt-1 tracking-wide tabular-nums">
           {amount.toLocaleString()}
         </span>
       )}

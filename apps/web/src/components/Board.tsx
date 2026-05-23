@@ -19,14 +19,16 @@ export function Board({ state }: { state: HandState }) {
 
   return (
     <div className="flex flex-col items-center gap-2">
-      {/* ストリートラベル: 二言語、brass ライン入り */}
+      {/* ストリートラベル: brass 細線が左右に伸びる横長デザイン */}
       <div className="flex items-baseline gap-3 mb-1">
-        <div className="h-px w-8 bg-gradient-to-r from-transparent to-brass/60" />
-        <span className="font-jp text-sm sm:text-base text-bone tracking-widest">{meta.jp}</span>
-        <span className="font-display italic text-[10px] sm:text-[11px] text-brass tracking-ultra uppercase">
-          {meta.en}
-        </span>
-        <div className="h-px w-8 bg-gradient-to-l from-transparent to-brass/60" />
+        <div className="h-px w-14 sm:w-20 bg-gradient-to-r from-transparent via-brass/50 to-brass/70" />
+        <div className="flex items-baseline gap-2">
+          <span className="font-jp text-sm sm:text-base text-bone tracking-widest">{meta.jp}</span>
+          <span className="font-display italic text-[10px] sm:text-[11px] text-brass tracking-ultra uppercase">
+            {meta.en}
+          </span>
+        </div>
+        <div className="h-px w-14 sm:w-20 bg-gradient-to-l from-transparent via-brass/50 to-brass/70" />
       </div>
 
       {/* ボード 5 枚 */}
