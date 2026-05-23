@@ -1,5 +1,7 @@
 import { ALL_52_CARDS } from '@pokergo/shared';
 import type { Card } from '@pokergo/shared';
+import { sampleFromRange } from '../analysis/handRange';
+import type { HandRange } from '../analysis/types';
 import { type Rng, cryptoRng } from '../game/deck';
 import { compareHands } from '../game/handEvaluator';
 
@@ -45,6 +47,42 @@ export function equityVsRandom(
     }
   }
   return wins / iterations;
+}
+
+// Monte Carlo equity vs 推定 villain レンジ。
+// villain hand は range から重み付きサンプリングし、それを 1 人として残ボードを抽選。
+export function equityVsRange(
+  hero: readonly [Card, Card],
+  board: readonly Card[],
+  villainRange: HandRange,
+  iterations = 500,
+  rng: Rng = cryptoRng,
+  deadCards: readonly Card[] = [],
+): number {
+  const usedBase = new Set<string>([...hero, ...board, ...deadCards]);
+  const remainingFull = (ALL_52_CARDS as readonly Card[]).filter((c) => !usedBase.has(c));
+  const needBoard = 5 - board.length;
+  if (needBoard < 0) throw new Error('equityVsRange: board too long');
+
+  let wins = 0;
+  let valid = 0;
+  for (let i = 0; i < iterations; i++) {
+    const villain = sampleFromRange(villainRange, [...hero, ...board, ...deadCards], rng);
+    if (!villain) continue;
+    // villain のカードを差し引いた残デッキから boardFill を引く
+    const usedSet = new Set<string>([...hero, ...board, ...deadCards, villain[0], villain[1]]);
+    const pool = remainingFull.filter((c) => !usedSet.has(c));
+    if (pool.length < needBoard) continue;
+    const boardFill = sampleK(pool, needBoard, rng);
+    const fullBoard = [...board, ...boardFill];
+    const winners = compareHands([
+      [...hero, ...fullBoard],
+      [villain[0], villain[1], ...fullBoard],
+    ]);
+    if (winners.includes(0)) wins += 1 / winners.length;
+    valid += 1;
+  }
+  return valid > 0 ? wins / valid : 0;
 }
 
 function sampleK(pool: readonly Card[], k: number, rng: Rng): Card[] {

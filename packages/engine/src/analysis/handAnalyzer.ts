@@ -2,8 +2,16 @@ import type { ActionType, Card, Seat, Street } from '@pokergo/shared';
 import type { HandState } from '../game/types';
 import { type BoardTextureTag, classifyBoard } from './boardTexture';
 import { type BestActionDecision, compareEv } from './ev';
+import { computeAdvancedEv } from './evAdvanced';
+import { estimateFoldEquity } from './foldEquity';
 import { gtoMatch } from './gtoMatch';
+import { classifyHandCategory } from './handCategory';
+import { summarizeRange } from './handRange';
+import { countOuts } from './outs';
 import { computeRequiredEquity } from './potOdds';
+import { estimateVillainRange } from './rangeEstimator';
+import type { HandCategory, OutsBreakdown, Verdict } from './types';
+import { generateVerdict } from './verdict';
 
 export interface ActionAnalysis {
   orderNo: number; // state.actions におけるグローバル順序 (D1 actions.order_no と一致)
@@ -20,6 +28,17 @@ export interface ActionAnalysis {
   deviationBb: number | null;
   gtoMatch: boolean | null; // postflop および vs-raise は null
   boardTexture: BoardTextureTag[] | null; // preflop は null
+  // --- v2 行動評価エンジン拡張 ---
+  handCategory?: HandCategory | undefined;
+  estimatedVillainRange?: string | undefined;
+  equityVsRangePct?: number | undefined;
+  outsBreakdown?: OutsBreakdown | undefined;
+  foldEquity?: number | undefined;
+  evBetBb?: number | null | undefined;
+  evRaiseBb?: number | null | undefined;
+  impliedOddsBonusBb?: number | undefined;
+  verdict?: Verdict | undefined;
+  reasoning?: string[] | undefined;
 }
 
 export interface HandAnalysis {
@@ -34,12 +53,21 @@ export type EquityFn = (
   numOpponents: number,
 ) => Promise<number>;
 
+// villain 推定レンジに対するエクイティ計算 (optional)。
+// 渡されない場合は equityVsRandom の値を equityVsRange の代用とする。
+export type EquityVsRangeFn = (
+  hero: readonly [Card, Card],
+  board: readonly Card[],
+  range: import('./types').HandRange,
+) => Promise<number>;
+
 // 完了した HandState から自分の各アクションを分析する。
 // equity 計算は injection（Web Worker など）で渡す。
 export async function analyzeHand(
   state: HandState,
   yourSeat: Seat,
   equityFn: EquityFn,
+  equityVsRangeFn?: EquityVsRangeFn,
 ): Promise<HandAnalysis> {
   const player = state.players.get(yourSeat);
   if (!player) {
@@ -67,6 +95,69 @@ export async function analyzeHand(
     const match = isPreflop ? gtoMatch(state, yourSeat, entry) : null;
     const texture = isPreflop ? null : classifyBoard(boardAtPoint);
 
+    // --- v2 拡張: ハンドカテゴリ / villain レンジ / advanced EV / verdict ---
+    const handCategory = classifyHandCategory(player.holeCards, boardAtPoint);
+    // 代表 villain (最も最近 active な opponent) を選んでレンジ推定
+    const villainSeat = pickPrimaryVillain(state, entry, yourSeat);
+    const villainRange =
+      villainSeat !== null
+        ? estimateVillainRange(state, villainSeat, [...player.holeCards, ...boardAtPoint])
+        : null;
+    const equityVsRange =
+      villainRange && equityVsRangeFn
+        ? await equityVsRangeFn(player.holeCards, boardAtPoint, villainRange)
+        : equity;
+    const outs =
+      !isPreflop && boardAtPoint.length <= 4
+        ? countOuts(player.holeCards, boardAtPoint, villainRange ?? {}, [])
+        : null;
+    const isBettingAction =
+      entry.type === 'bet' || entry.type === 'raise' || entry.type === 'all_in';
+    const foldEq =
+      !isPreflop && isBettingAction && villainRange
+        ? estimateFoldEquity(
+            entry.amount,
+            entry.potBefore,
+            villainRange,
+            boardAtPoint,
+            entry.street,
+            [...player.holeCards, ...boardAtPoint],
+          )
+        : 0;
+    const adv = computeAdvancedEv({
+      equityVsRange,
+      toCallBefore: entry.toCallBefore,
+      potBefore: entry.potBefore,
+      heroStack: player.stack + entry.amount, // entry 時点のスタック近似 (chip 額)
+      bb: state.bb,
+      foldEquity: foldEq,
+      handCategory,
+      street: entry.street,
+      outs,
+    });
+    const verdictResult = generateVerdict({
+      taken: entry.type,
+      bestAction: ev.bestAction,
+      deviationBb: ev.deviationBb,
+      takenEvBb: ev.takenEvBb,
+      bestEvBb: Math.max(ev.bestEvBb, adv.bestEvBb),
+      gtoMatch: match,
+      handCategory,
+      equityPct: equity * 100,
+      equityVsRangePct: equityVsRange * 100,
+      requiredEquityPct: requiredEq !== null ? requiredEq * 100 : null,
+      foldEquity: isBettingAction ? foldEq : null,
+      street: entry.street,
+      potBefore: entry.potBefore,
+      toCallBefore: entry.toCallBefore,
+      bb: state.bb,
+      heroStack: player.stack + entry.amount,
+      outs,
+      evBetBb: adv.evBetBb,
+      evRaiseBb: adv.evRaiseBb,
+      impliedOddsBonusBb: adv.impliedOddsBonusBb,
+    });
+
     actions.push({
       orderNo: idx,
       street: entry.street,
@@ -82,10 +173,47 @@ export async function analyzeHand(
       deviationBb: ev.deviationBb,
       gtoMatch: match,
       boardTexture: texture,
+      handCategory,
+      estimatedVillainRange: villainRange ? summarizeRange(villainRange, 'villain') : undefined,
+      equityVsRangePct: equityVsRange * 100,
+      outsBreakdown: outs ?? undefined,
+      foldEquity: isBettingAction ? foldEq : undefined,
+      evBetBb: adv.evBetBb,
+      evRaiseBb: adv.evRaiseBb,
+      impliedOddsBonusBb: adv.impliedOddsBonusBb,
+      verdict: verdictResult.verdict,
+      reasoning: verdictResult.reasoning,
     });
   }
 
   return { handId: state.handId, yourSeat, actions };
+}
+
+// 「代表敵」を選ぶ: entry より前に active で、最も最近 voluntary action を取った相手。
+function pickPrimaryVillain(
+  state: HandState,
+  entry: import('../game/types').ActionEntry,
+  yourSeat: Seat,
+): Seat | null {
+  const idx = state.actions.indexOf(entry);
+  const prior = idx >= 0 ? state.actions.slice(0, idx) : [];
+  const folded = new Set<Seat>();
+  for (const a of prior) {
+    if (a.type === 'fold') folded.add(a.seat);
+  }
+  // active な相手で最も後にアクションした人を選ぶ
+  for (let i = prior.length - 1; i >= 0; i--) {
+    const a = prior[i];
+    if (!a) continue;
+    if (a.seat === yourSeat) continue;
+    if (folded.has(a.seat)) continue;
+    return a.seat;
+  }
+  // 履歴がない場合は他席で先頭を返す
+  for (const seat of state.players.keys()) {
+    if (seat !== yourSeat && !folded.has(seat)) return seat;
+  }
+  return null;
 }
 
 // entry より前のアクションをみて、fold していない他席（自分以外）の数を返す。

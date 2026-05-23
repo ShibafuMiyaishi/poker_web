@@ -1,3 +1,4 @@
+import type { HandRange } from '@pokergo/engine';
 import type { Card } from '@pokergo/shared';
 import EquityWorker from '../workers/equity.worker?worker';
 
@@ -34,5 +35,19 @@ export function computeEquity(
   return new Promise<number>((resolve) => {
     pending.set(id, resolve);
     w.postMessage({ id, hero, board: [...board], iterations, numOpponents });
+  });
+}
+
+export function computeEquityVsRange(
+  hero: readonly [Card, Card],
+  board: readonly Card[],
+  range: HandRange,
+  iterations = 500,
+): Promise<number> {
+  const w = ensureWorker();
+  const id = nextId++;
+  return new Promise<number>((resolve) => {
+    pending.set(id, resolve);
+    w.postMessage({ id, kind: 'range', hero, board: [...board], range, iterations });
   });
 }
