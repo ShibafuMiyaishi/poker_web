@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#070d12"/>
+      <stop offset="60%" stop-color="#0a2418"/>
+      <stop offset="100%" stop-color="#04070a"/>
+    </linearGradient>
+    <linearGradient id="brass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fde68a"/>
+      <stop offset="60%" stop-color="#c89f48"/>
+      <stop offset="100%" stop-color="#6f5520"/>
+    </linearGradient>
+    <pattern id="vine" width="80" height="120" patternUnits="userSpaceOnUse" patternTransform="rotate(15)">
+      <path d="M40 0 Q60 30 40 60 Q20 90 40 120" stroke="#c89f48" stroke-width="0.6" fill="none" opacity="0.18"/>
+      <ellipse cx="55" cy="30" rx="4" ry="9" transform="rotate(35 55 30)" fill="#c89f48" opacity="0.14"/>
+      <ellipse cx="25" cy="90" rx="4" ry="9" transform="rotate(-35 25 90)" fill="#c89f48" opacity="0.14"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#vine)"/>
+
+  <!-- 上下 brass 細線 -->
+  <line x1="80" y1="80" x2="1120" y2="80" stroke="url(#brass)" stroke-width="1" opacity="0.6"/>
+  <line x1="80" y1="550" x2="1120" y2="550" stroke="url(#brass)" stroke-width="1" opacity="0.6"/>
+
+  <!-- 中央 朱印 + ロゴ -->
+  <g transform="translate(600 200)">
+    <!-- 楕円ロゴ -->
+    <ellipse cx="0" cy="0" rx="60" ry="42" fill="none" stroke="url(#brass)" stroke-width="3"/>
+    <!-- 蔦 -->
+    <path d="M -50 -20 Q -30 -28 -10 -20 Q 10 -12 30 -20 Q 50 -28 60 -20" stroke="url(#brass)" stroke-width="2" fill="none" opacity="0.7"/>
+    <ellipse cx="-30" cy="-25" rx="3" ry="7" transform="rotate(40 -30 -25)" fill="url(#brass)" opacity="0.75"/>
+    <ellipse cx="30" cy="-25" rx="3" ry="7" transform="rotate(-40 30 -25)" fill="url(#brass)" opacity="0.75"/>
+    <!-- 朱印 -->
+    <rect x="-22" y="-8" width="44" height="42" rx="2" fill="#c14a3d" stroke="#6e1a1f" stroke-width="1"/>
+    <text x="0" y="25" text-anchor="middle" font-size="28" font-weight="800" font-family="serif" fill="#fbf7ed">役</text>
+  </g>
+
+  <!-- 大タイトル -->
+  <text x="600" y="340" text-anchor="middle" font-family="Georgia, serif" font-weight="900" font-size="120" fill="url(#brass)" letter-spacing="-2">
+    Pokergo
+  </text>
+  <text x="600" y="385" text-anchor="middle" font-family="serif" font-weight="500" font-size="22" fill="#cfc7b1" letter-spacing="6">
+    ポーカーゴー
+  </text>
+
+  <!-- キャッチコピー -->
+  <g transform="translate(600 460)">
+    <text text-anchor="middle" font-family="serif" font-size="30" fill="#fbf7ed" letter-spacing="2">
+      <tspan>実戦で学ぶ、</tspan>
+      <tspan fill="#6ee7b7" font-weight="700">無料</tspan>
+      <tspan>テキサスホールデム。</tspan>
+    </text>
+    <text text-anchor="middle" font-family="serif" font-size="20" fill="#cfc7b1" letter-spacing="3" y="40">
+      CPU 7 体と即プレイ · EV/GTO 自動分析 · 賭博無し
+    </text>
+  </g>
+</svg>

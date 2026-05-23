@@ -3,6 +3,7 @@ import { CumulativeGraph } from '../components/CumulativeGraph';
 import { StatCard } from '../components/StatCard';
 import { EmptyIllustration } from '../components/primitives/EmptyIllustration';
 import { SectionLabel } from '../components/primitives/SectionLabel';
+import { Skeleton, StatCardSkeleton } from '../components/primitives/Skeleton';
 import { type GraphPoint, type Period, type StatsSummary, getGraph, getStats } from '../lib/api';
 
 const PERIODS: { key: Period; label: string }[] = [
@@ -65,7 +66,17 @@ export function StatsPage() {
         </fieldset>
       </header>
 
-      {loading && <div className="text-sm text-ivory-dim font-jp tracking-widest">読み込み中…</div>}
+      {loading && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {Array.from({ length: 8 }).map((_, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholder
+              <StatCardSkeleton key={i} />
+            ))}
+          </div>
+          <Skeleton className="h-48 w-full" />
+        </div>
+      )}
 
       {error && (
         <EmptyIllustration

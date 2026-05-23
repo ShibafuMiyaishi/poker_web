@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AdSlot } from './components/AdSlot';
+import { OfflineBanner } from './components/OfflineBanner';
+import { ShortcutsModal } from './components/ShortcutsModal';
 import { Toaster } from './components/Toaster';
 import { LogoMark } from './components/primitives/LogoMark';
 import { flushPendingQueue } from './lib/api';
@@ -82,6 +84,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen text-ivory flex flex-col relative">
+      <OfflineBanner />
       <a href="#main" className="skip-link">
         本文へスキップ
       </a>
@@ -203,6 +206,7 @@ export default function App() {
       </footer>
 
       <Toaster />
+      <ShortcutsModal />
       {/* WelcomeSplash は LandingPage で代替済み (重複モーダル排除) */}
     </div>
   );

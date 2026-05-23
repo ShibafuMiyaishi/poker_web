@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { ConfirmDialog } from '../components/primitives/ConfirmDialog';
 import { SectionLabel } from '../components/primitives/SectionLabel';
 import { clearAuth, getStoredUser, startGoogleLogin } from '../lib/auth';
 import { useTableStore } from '../stores/tableStore';
@@ -11,9 +13,12 @@ export function SettingsPage({ onLogout }: Props) {
   const sfxEnabled = useTableStore((s) => s.sfxEnabled);
   const motionEnabled = useTableStore((s) => s.motionEnabled);
   const bbDisplay = useTableStore((s) => s.bbDisplay);
+  const fontScale = useTableStore((s) => s.fontScale);
   const setSfxEnabled = useTableStore((s) => s.setSfxEnabled);
   const setMotionEnabled = useTableStore((s) => s.setMotionEnabled);
   const setBbDisplay = useTableStore((s) => s.setBbDisplay);
+  const setFontScale = useTableStore((s) => s.setFontScale);
+  const [confirmLogout, setConfirmLogout] = useState(false);
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
@@ -55,10 +60,7 @@ export function SettingsPage({ onLogout }: Props) {
           </button>
           <button
             type="button"
-            onClick={() => {
-              clearAuth();
-              onLogout();
-            }}
+            onClick={() => setConfirmLogout(true)}
             className="text-xs px-4 py-2 rounded-md border border-crimson/40 bg-crimson/10 text-crimson-glow font-jp tracking-widest hover:bg-crimson/20 transition"
           >
             ログアウト
@@ -89,6 +91,39 @@ export function SettingsPage({ onLogout }: Props) {
             checked={bbDisplay}
             onChange={setBbDisplay}
           />
+          {/* フォントサイズ (a11y) */}
+          <div className="flex items-center justify-between gap-3 pt-2 border-t border-brass/10">
+            <div className="flex-1 min-w-0">
+              <div className="font-jp text-sm text-ivory tracking-wider">文字サイズ</div>
+              <div className="font-jp text-[11px] text-ivory-muted mt-0.5">
+                小さい文字が読みづらい場合は大きく。次回読み込み時にも保持されます。
+              </div>
+            </div>
+            <div role="radiogroup" aria-label="文字サイズ" className="flex items-center gap-1">
+              {[
+                { v: 0.875, label: '小' },
+                { v: 1.0, label: '標準' },
+                { v: 1.125, label: '大' },
+                { v: 1.25, label: '特大' },
+              ].map((opt) => (
+                <button
+                  key={opt.v}
+                  type="button"
+                  // biome-ignore lint/a11y/useSemanticElements: button[role=radio] は ARIA APG 推奨
+                  role="radio"
+                  aria-checked={fontScale === opt.v}
+                  onClick={() => setFontScale(opt.v)}
+                  className={`px-2 py-1 text-[10px] font-jp-sans tracking-wider rounded transition ${
+                    fontScale === opt.v
+                      ? 'brass-surface text-ivory'
+                      : 'border border-ink-line bg-ink-deepest/40 text-ivory-dim hover:border-brass/40'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -113,6 +148,21 @@ export function SettingsPage({ onLogout }: Props) {
           </li>
         </ul>
       </section>
+
+      <ConfirmDialog
+        open={confirmLogout}
+        title="ログアウトしますか?"
+        description="ログアウトすると次回はゲストとして再ログインされます。ローカル設定 (bb 表示・文字サイズ等) は保持されます。"
+        confirmLabel="ログアウト"
+        cancelLabel="キャンセル"
+        destructive
+        onConfirm={() => {
+          setConfirmLogout(false);
+          clearAuth();
+          onLogout();
+        }}
+        onCancel={() => setConfirmLogout(false)}
+      />
     </div>
   );
 }

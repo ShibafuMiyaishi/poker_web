@@ -24,6 +24,8 @@ interface TableStore {
   motionEnabled: boolean;
   /** チップ単位 (chip) と bb 単位の表示切替 */
   bbDisplay: boolean;
+  /** 本文フォントサイズ倍率 (0.875 / 1.0 / 1.125 / 1.25) */
+  fontScale: number;
   setState: (s: HandState | null) => void;
   setCpuNames: (m: Map<Seat, string>) => void;
   setYourSeat: (s: Seat) => void;
@@ -36,6 +38,7 @@ interface TableStore {
   setSfxEnabled: (v: boolean) => void;
   setMotionEnabled: (v: boolean) => void;
   setBbDisplay: (v: boolean) => void;
+  setFontScale: (v: number) => void;
   incrementHandsPlayed: () => void;
 }
 
@@ -44,6 +47,14 @@ function loadBool(key: string, defaultValue: boolean): boolean {
   const v = localStorage.getItem(key);
   if (v === null) return defaultValue;
   return v === '1';
+}
+
+function loadFloat(key: string, defaultValue: number): number {
+  if (typeof localStorage === 'undefined') return defaultValue;
+  const v = localStorage.getItem(key);
+  if (v === null) return defaultValue;
+  const n = Number.parseFloat(v);
+  return Number.isFinite(n) ? n : defaultValue;
 }
 
 export const useTableStore = create<TableStore>((set) => ({
@@ -62,6 +73,7 @@ export const useTableStore = create<TableStore>((set) => ({
   sfxEnabled: loadBool('pokergo_sfx', true),
   motionEnabled: loadBool('pokergo_motion', true),
   bbDisplay: loadBool('pokergo_bb_display', false),
+  fontScale: loadFloat('pokergo_font_scale', 1.0),
   setState: (s) => set({ state: s }),
   setCpuNames: (m) => set({ cpuNames: new Map(m) }),
   setYourSeat: (s) => set({ yourSeat: s }),
@@ -85,6 +97,11 @@ export const useTableStore = create<TableStore>((set) => ({
   setBbDisplay: (v) => {
     localStorage.setItem('pokergo_bb_display', v ? '1' : '0');
     set({ bbDisplay: v });
+  },
+  setFontScale: (v) => {
+    localStorage.setItem('pokergo_font_scale', String(v));
+    document.documentElement.style.setProperty('font-size', `${v * 16}px`);
+    set({ fontScale: v });
   },
   incrementHandsPlayed: () => set((s) => ({ handsPlayed: s.handsPlayed + 1 })),
 }));

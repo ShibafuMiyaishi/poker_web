@@ -2,6 +2,7 @@ import type { ActionAnalysis, Verdict } from '@pokergo/engine';
 import { useState } from 'react';
 import { actionJp, streetJp } from '../lib/pokerI18n';
 import { useTableStore } from '../stores/tableStore';
+import { Tooltip } from './primitives/Tooltip';
 
 function fmtPct(v: number | null | undefined): string {
   if (v == null) return '—';
@@ -183,31 +184,42 @@ function RowGroup({
                 )}
                 {a.equityVsRangePct != null && (
                   <span>
-                    <span className="text-ivory-muted">レンジ vs eq:</span>{' '}
-                    <span className="font-mono-tabular">{a.equityVsRangePct.toFixed(1)}%</span>
+                    <Tooltip content="相手の推定レンジに対するエクイティ。GTO チャート + 行動履歴からレンジを推定し、Monte Carlo でシミュレート。">
+                      <span className="text-ivory-muted">レンジ vs eq</span>
+                    </Tooltip>
+                    : <span className="font-mono-tabular">{a.equityVsRangePct.toFixed(1)}%</span>
                   </span>
                 )}
                 {a.outsBreakdown && a.outsBreakdown.clean > 0 && (
                   <span>
-                    <span className="text-ivory-muted">アウツ:</span>{' '}
-                    <span className="font-mono-tabular brass-text">{a.outsBreakdown.clean}</span>
+                    <Tooltip content="自分の役を改善する残りカードの数。Rule of 2/4 で勝率に換算 (フロップなら outs × 4)。">
+                      <span className="text-ivory-muted">アウツ</span>
+                    </Tooltip>
+                    : <span className="font-mono-tabular brass-text">{a.outsBreakdown.clean}</span>
                   </span>
                 )}
                 {a.foldEquity != null && (
                   <span>
-                    <span className="text-ivory-muted">FE:</span>{' '}
-                    <span className="font-mono-tabular">{(a.foldEquity * 100).toFixed(0)}%</span>
+                    <Tooltip content="フォールドエクイティ。あなたのベット/レイズに対し、相手がフォールドする推定確率。ブラフ EV の構成要素。">
+                      <span className="text-ivory-muted">FE</span>
+                    </Tooltip>
+                    : <span className="font-mono-tabular">{(a.foldEquity * 100).toFixed(0)}%</span>
                   </span>
                 )}
                 {a.evBetBb != null && (
                   <span>
-                    <span className="text-ivory-muted">EV(bet):</span>{' '}
-                    <span className="font-mono-tabular">{fmtBb(a.evBetBb)}</span>
+                    <Tooltip content="ベット時の期待値 (bb 単位)。foldEq × pot + (1-foldEq) × (callEq × (pot+2B) - B) で算出。">
+                      <span className="text-ivory-muted">EV(bet)</span>
+                    </Tooltip>
+                    : <span className="font-mono-tabular">{fmtBb(a.evBetBb)}</span>
                   </span>
                 )}
                 {a.impliedOddsBonusBb != null && a.impliedOddsBonusBb > 0 && (
                   <span>
-                    <span className="text-ivory-muted">IO+:</span>{' '}
+                    <Tooltip content="インプライドオッズ。ドロー成立時に将来のストリートで追加獲得できる期待値の補正。outs × 0.02 × 残ストリート × stack で近似。">
+                      <span className="text-ivory-muted">IO+</span>
+                    </Tooltip>
+                    :{' '}
                     <span className="font-mono-tabular jade-text">
                       {fmtBb(a.impliedOddsBonusBb)}
                     </span>

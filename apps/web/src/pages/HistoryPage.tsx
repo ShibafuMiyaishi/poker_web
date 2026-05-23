@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { HandReplay } from '../components/HandReplay';
 import { toast } from '../components/Toaster';
 import { EmptyIllustration } from '../components/primitives/EmptyIllustration';
 import { SectionLabel } from '../components/primitives/SectionLabel';
+import { HandRowSkeleton } from '../components/primitives/Skeleton';
 import { type HandDetail, type HandListItem, getHand, listHands } from '../lib/api';
+import { relativeTime } from '../lib/relativeTime';
 
 function formatDate(ms: number): string {
   const d = new Date(ms);
@@ -11,11 +13,15 @@ function formatDate(ms: number): string {
   return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+type Filter = 'all' | 'win' | 'loss';
+
 export function HistoryPage() {
   const [hands, setHands] = useState<HandListItem[]>([]);
   const [selected, setSelected] = useState<HandDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<Filter>('all');
+  const [query, setQuery] = useState('');
 
   const loadHands = useCallback(() => {
     setLoading(true);
@@ -44,13 +50,28 @@ export function HistoryPage() {
       .catch(() => toast('クリップボードコピーに失敗', 'error'));
   };
 
+  // フィルタ適用 (勝敗 + ホールカード文字列マッチ)
+  const filteredHands = useMemo(() => {
+    return hands.filter((h) => {
+      if (filter === 'win' && h.net_chips < 0) return false;
+      if (filter === 'loss' && h.net_chips >= 0) return false;
+      if (query && !h.hole_cards.toLowerCase().includes(query.toLowerCase())) return false;
+      return true;
+    });
+  }, [hands, filter, query]);
+
   if (loading) {
     return (
       <div className="space-y-4">
         <header className="border-b border-brass/20 pb-3">
           <SectionLabel jp="ハンド記録" en="Hand Log" size="lg" />
         </header>
-        <div className="text-sm text-ivory-dim font-jp tracking-widest">読み込み中…</div>
+        <div className="rounded-md border border-brass/20 bg-ink-deep/60 p-3 space-y-1">
+          {Array.from({ length: 8 }).map((_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholder は順序固定
+            <HandRowSkeleton key={i} />
+          ))}
+        </div>
       </div>
     );
   }
@@ -86,11 +107,45 @@ export function HistoryPage() {
             <div className="flex items-baseline gap-2 mb-2 mt-1">
               <span className="font-jp text-sm text-ivory tracking-widest">ハンド一覧</span>
               <span className="font-mono-tabular text-[10px] text-brass tabular-nums">
-                ({hands.length})
+                ({filteredHands.length} / {hands.length})
               </span>
             </div>
+            {/* フィルタ + 検索 */}
+            <div className="flex flex-col gap-2 mb-2">
+              <input
+                type="search"
+                placeholder="ホールカード検索 (例: AKs)"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="w-full px-2 py-1 text-xs bg-ink-deepest/70 border border-brass/20 rounded font-jp-sans placeholder:text-ivory-muted focus:outline-none focus:border-brass/55"
+                aria-label="ホールカード検索"
+              />
+              <div role="radiogroup" aria-label="勝敗フィルタ" className="flex gap-1">
+                {(['all', 'win', 'loss'] as const).map((f) => {
+                  const label = f === 'all' ? '全部' : f === 'win' ? '勝ち' : '負け';
+                  const active = filter === f;
+                  return (
+                    <button
+                      key={f}
+                      type="button"
+                      // biome-ignore lint/a11y/useSemanticElements: button[role=radio] は ARIA APG 推奨パターン (見た目カスタム + aria-checked で状態)
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => setFilter(f)}
+                      className={`flex-1 px-2 py-1 text-[10px] font-jp-sans tracking-widest rounded transition ${
+                        active
+                          ? 'brass-surface text-ivory'
+                          : 'border border-ink-line bg-ink-deepest/40 text-ivory-dim hover:border-brass/40'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <ul className="space-y-0.5">
-              {hands.map((h) => (
+              {filteredHands.map((h) => (
                 <li key={h.id}>
                   <button
                     type="button"
@@ -101,8 +156,11 @@ export function HistoryPage() {
                         : 'hover:bg-ink-soft/70 hover:border-l-2 hover:border-brass/45 hover:-translate-y-px hover:shadow-[0_2px_8px_-2px_rgba(245,215,122,0.12)] border-l-2 border-transparent'
                     }`}
                   >
-                    <span className="text-[10px] text-ivory-muted font-mono-tabular shrink-0">
-                      {formatDate(h.started_at)}
+                    <span
+                      className="text-[10px] text-ivory-muted font-mono-tabular shrink-0"
+                      title={formatDate(h.started_at)}
+                    >
+                      {relativeTime(h.started_at)}
                     </span>
                     <span className="font-display text-xs text-ivory">{h.hole_cards}</span>
                     <span
