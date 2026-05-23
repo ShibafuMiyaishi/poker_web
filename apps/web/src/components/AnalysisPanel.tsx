@@ -13,10 +13,10 @@ function fmtBb(v: number | null): string {
 }
 
 function rowTint(a: ActionAnalysis): string {
-  if (a.deviationBb === null) return 'bg-ink-deep/40';
+  if (a.deviationBb === null) return '';
   if (a.deviationBb < 0.05) return 'bg-jade/10';
-  if (a.deviationBb < 0.3) return 'bg-ink-soft/60';
-  return 'bg-crimson/15';
+  if (a.deviationBb < 0.3) return '';
+  return 'bg-crimson/12';
 }
 
 const STREET_JP: Record<string, string> = {
@@ -27,6 +27,15 @@ const STREET_JP: Record<string, string> = {
   showdown: 'SD',
 };
 
+const ACTION_JP: Record<string, string> = {
+  fold: 'フォールド',
+  check: 'チェック',
+  call: 'コール',
+  bet: 'ベット',
+  raise: 'レイズ',
+  all_in: 'オールイン',
+};
+
 export function AnalysisPanel() {
   const analysis = useTableStore((s) => s.analysis);
   if (!analysis || analysis.actions.length === 0) return null;
@@ -34,39 +43,36 @@ export function AnalysisPanel() {
   return (
     <div className="relative mt-4 w-full max-w-3xl rounded-md border border-brass/25 bg-gradient-to-b from-ink-deep/95 to-ink/95 shadow-card overflow-hidden">
       <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-brass/40 to-transparent" />
-      <div className="px-4 py-3 border-b border-brass/15 flex items-baseline gap-2">
-        <span className="font-jp text-sm text-ivory tracking-widest">アクション分析</span>
-        <span className="font-display italic text-[10px] text-brass tracking-widest uppercase opacity-80">
-          Action Analysis
-        </span>
+      <div className="px-4 py-3 border-b border-brass/15">
+        <h3 className="font-jp text-base text-ivory tracking-widest">アクション分析</h3>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead className="text-ivory-muted">
             <tr className="border-b border-ink-line/60">
-              <th className="text-left px-3 py-2 font-display italic font-normal tracking-widest">
-                street
+              <th className="text-left px-3 py-2 font-jp font-medium tracking-widest text-[10px]">
+                局
               </th>
-              <th className="text-left px-3 py-2 font-display italic font-normal tracking-widest">
-                action
+              <th className="text-left px-3 py-2 font-jp font-medium tracking-widest text-[10px]">
+                行動
               </th>
-              <th className="text-right px-3 py-2 font-display italic font-normal tracking-widest">
-                eq
+              <th className="text-right px-3 py-2 font-jp font-medium tracking-widest text-[10px]">
+                エクイティ
               </th>
-              <th className="text-right px-3 py-2 font-display italic font-normal tracking-widest">
+              <th className="text-right px-3 py-2 font-jp font-medium tracking-widest text-[10px]">
                 需勝率
               </th>
-              <th className="text-right px-3 py-2 font-display italic font-normal tracking-widest">
+              <th className="text-right px-3 py-2 font-jp font-medium tracking-widest text-[10px]">
                 EV採
               </th>
-              <th className="text-right px-3 py-2 font-display italic font-normal tracking-widest">
+              <th className="text-right px-3 py-2 font-jp font-medium tracking-widest text-[10px]">
                 EV最
               </th>
-              <th className="text-left px-3 py-2 font-display italic font-normal tracking-widest">
+              <th className="text-left px-3 py-2 font-jp font-medium tracking-widest text-[10px]">
                 最善
               </th>
-              <th className="text-left px-3 py-2 font-display italic font-normal tracking-widest">
-                GTO/Board
+              <th className="text-left px-3 py-2 font-jp font-medium tracking-widest text-[10px]">
+                GTO/盤面
               </th>
             </tr>
           </thead>
@@ -77,9 +83,11 @@ export function AnalysisPanel() {
                 <td className="px-3 py-1.5 font-jp text-ivory-dim">
                   {STREET_JP[a.street] ?? a.street}
                 </td>
-                <td className="px-3 py-1.5 font-display text-ivory">
-                  {a.action}
-                  {a.amount > 0 ? ` ${a.amount}` : ''}
+                <td className="px-3 py-1.5 font-jp text-ivory">
+                  {ACTION_JP[a.action] ?? a.action}
+                  {a.amount > 0 && (
+                    <span className="font-mono-tabular ml-1 text-ivory-dim">{a.amount}</span>
+                  )}
                 </td>
                 <td className="px-3 py-1.5 text-right font-mono-tabular">{fmtPct(a.equityPct)}</td>
                 <td className="px-3 py-1.5 text-right font-mono-tabular text-ivory-dim">
@@ -89,7 +97,9 @@ export function AnalysisPanel() {
                 <td className="px-3 py-1.5 text-right font-mono-tabular brass-text font-bold">
                   {fmtBb(a.bestEvBb)}
                 </td>
-                <td className="px-3 py-1.5 font-display italic text-brass">{a.bestAction}</td>
+                <td className="px-3 py-1.5 font-jp text-brass">
+                  {ACTION_JP[a.bestAction] ?? a.bestAction}
+                </td>
                 <td className="px-3 py-1.5 text-[10px] text-ivory-muted">
                   {a.gtoMatch !== null
                     ? a.gtoMatch

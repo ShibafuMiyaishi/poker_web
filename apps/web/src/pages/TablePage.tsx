@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import { Table } from '../components/Table';
-import { SectionLabel } from '../components/primitives/SectionLabel';
 import { handDriver } from '../lib/handDriver';
 
 export function TablePage() {
@@ -12,10 +11,6 @@ export function TablePage() {
     started.current = true;
     handDriver.startNewHand();
   }, []);
-  return (
-    <div className="space-y-4">
-      <SectionLabel jp="独卓" en="Solo Table" align="center" />
-      <Table />
-    </div>
-  );
+  // 卓画面は卓そのものが主役。見出しは redundant。
+  return <Table />;
 }

@@ -53,17 +53,11 @@ export function ActionPanel() {
   if (!isYourTurn || !state || !player) {
     return (
       <div className="mt-3 flex flex-col items-center gap-2">
-        <div className="text-[11px] sm:text-xs text-ivory-dim text-center flex items-center gap-2">
+        <div className="text-xs sm:text-sm font-jp tracking-widest text-center">
           {status === 'between_hands' && winners ? (
-            <>
-              <span className="font-jp tracking-widest">次のハンドへ</span>
-              <span className="font-display italic text-brass">Next hand…</span>
-            </>
+            <span className="text-brass">次のハンドへ…</span>
           ) : (
-            <>
-              <span className="font-jp tracking-widest">相手の手番</span>
-              <span className="font-display italic text-ivory-muted">Awaiting action…</span>
-            </>
+            <span className="text-ivory-muted">相手の手番</span>
           )}
         </div>
         {status === 'between_hands' && mode === 'local' && (

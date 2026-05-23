@@ -3,7 +3,22 @@ import type { HandDetail } from '../lib/api';
 import { Card } from './Card';
 
 type Street = 'preflop' | 'flop' | 'turn' | 'river' | 'showdown';
-const STREETS: Street[] = ['preflop', 'flop', 'turn', 'river', 'showdown'];
+const STREETS: { key: Street; label: string }[] = [
+  { key: 'preflop', label: 'プリフロ' },
+  { key: 'flop', label: 'フロップ' },
+  { key: 'turn', label: 'ターン' },
+  { key: 'river', label: 'リバー' },
+  { key: 'showdown', label: 'SD' },
+];
+
+const ACTION_JP: Record<string, string> = {
+  fold: 'フォールド',
+  check: 'チェック',
+  call: 'コール',
+  bet: 'ベット',
+  raise: 'レイズ',
+  all_in: 'オールイン',
+};
 
 function boardCards(boardStr: string, street: Street): string[] {
   const all = boardStr ? boardStr.split(/\s+/).filter(Boolean) : [];
@@ -20,7 +35,6 @@ function boardCards(boardStr: string, street: Street): string[] {
 }
 
 // ハンドリプレイ: ストリート別タイムライン (仕様 F-H-03)。
-// 履歴詳細の actions と board からストリート切替で再生する。
 export function HandReplay({ detail }: { detail: HandDetail }) {
   const [street, setStreet] = useState<Street>('preflop');
   const board = useMemo(() => boardCards(detail.hand.board, street), [detail, street]);
@@ -43,25 +57,31 @@ export function HandReplay({ detail }: { detail: HandDetail }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-1 text-xs">
-        <span className="text-slate-400 mr-2">ストリート:</span>
+      <div className="flex items-center gap-1 text-xs flex-wrap">
+        <span className="font-jp text-ivory-muted text-[10px] tracking-widest mr-1">局</span>
         {STREETS.map((s) => (
           <button
-            key={s}
+            key={s.key}
             type="button"
-            onClick={() => setStreet(s)}
-            className={`px-2 py-1 rounded ${street === s ? 'bg-accent' : 'bg-slate-800 hover:bg-slate-700'}`}
+            onClick={() => setStreet(s.key)}
+            className={`px-2.5 py-1 rounded font-jp text-[11px] tracking-widest transition ${
+              street === s.key
+                ? 'brass-surface text-ivory'
+                : 'bg-ink-deep/70 border border-ink-line text-ivory-dim hover:border-brass/40 hover:text-ivory'
+            }`}
           >
-            {s}
+            {s.label}
           </button>
         ))}
       </div>
 
-      <div className="flex flex-col items-center gap-2 py-3 bg-felt/40 rounded border border-slate-800">
-        <div className="text-[10px] text-slate-400 tracking-widest uppercase">{street}</div>
+      <div className="flex flex-col items-center gap-2 py-3 bg-ink-deepest/70 rounded border border-brass/15 paper-noise">
+        <div className="font-jp text-[10px] text-ivory-muted tracking-widest">
+          {STREETS.find((s) => s.key === street)?.label ?? street}
+        </div>
         <div className="flex gap-1">
           {board.length === 0 ? (
-            <span className="text-[11px] text-slate-500">（ボードなし）</span>
+            <span className="text-[11px] font-jp text-ivory-muted">（ボードなし）</span>
           ) : (
             board.map((c) => <Card key={`r-${street}-${c}`} card={c} size="sm" />)
           )}
@@ -69,27 +89,35 @@ export function HandReplay({ detail }: { detail: HandDetail }) {
       </div>
 
       <div>
-        <h4 className="text-xs font-semibold text-slate-300 mb-1">アクション ({actions.length})</h4>
+        <h4 className="font-jp text-xs text-ivory tracking-widest mb-1">
+          アクション
+          <span className="font-mono-tabular text-brass ml-2 text-[10px]">({actions.length})</span>
+        </h4>
         <ul className="max-h-72 overflow-y-auto text-[11px]">
           {actions.map((a) => {
             const p = playerByseat.get(a.seat_no);
+            const me = p && (p as { user_id: string | null }).user_id;
             return (
               <li
                 key={a.order_no}
-                className={`px-2 py-1 odd:bg-slate-800/30 flex gap-2 ${a.street === street ? 'border-l-2 border-accent' : 'opacity-70'}`}
+                className={`px-2 py-1 odd:bg-ink-deep/40 flex gap-2 ${a.street === street ? 'border-l-2 border-brass' : 'opacity-60'}`}
               >
-                <span className="text-slate-500 w-14 shrink-0">[{a.street}]</span>
-                <span className="text-slate-200 w-20 shrink-0 truncate">
+                <span className="text-ivory-muted font-jp w-14 shrink-0 text-[10px]">
+                  {STREET_JP_HR[a.street] ?? a.street}
+                </span>
+                <span className="text-ivory w-20 shrink-0 truncate font-jp">
                   {p
-                    ? p.user_id
+                    ? me
                       ? 'あなた'
-                      : (p.cpu_name ?? `seat ${a.seat_no}`)
+                      : ((p as { cpu_name: string | null }).cpu_name ?? `seat ${a.seat_no}`)
                     : `seat ${a.seat_no}`}
                 </span>
-                <span className="text-slate-100 font-mono">
-                  {a.action_type}
-                  {a.amount > 0 ? ` ${a.amount}` : ''}
+                <span className="text-ivory-dim font-jp text-[10px]">
+                  {ACTION_JP[a.action_type] ?? a.action_type}
                 </span>
+                {a.amount > 0 && (
+                  <span className="text-brass font-mono-tabular text-[10px]">{a.amount}</span>
+                )}
               </li>
             );
           })}
@@ -98,3 +126,11 @@ export function HandReplay({ detail }: { detail: HandDetail }) {
     </div>
   );
 }
+
+const STREET_JP_HR: Record<string, string> = {
+  preflop: 'プリフロ',
+  flop: 'フロップ',
+  turn: 'ターン',
+  river: 'リバー',
+  showdown: 'SD',
+};

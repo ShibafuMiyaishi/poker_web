@@ -172,7 +172,6 @@ export function CumulativeGraph({ points }: Props) {
         <span className="flex items-center gap-1.5">
           <span className="inline-block w-4 h-0.5 bg-gradient-to-r from-jade-glow to-jade" />
           <span className="font-jp">実損益</span>
-          <span className="font-display italic">Realized</span>
         </span>
         <span className="flex items-center gap-1.5">
           <span
@@ -181,8 +180,7 @@ export function CumulativeGraph({ points }: Props) {
               background: 'repeating-linear-gradient(90deg, #f5d77a 0 5px, transparent 5px 8px)',
             }}
           />
-          <span className="font-jp">EV ライン</span>
-          <span className="font-display italic">All-in adjusted</span>
+          <span className="font-jp">EV ライン (採用 vs 最善 EV 差の累積)</span>
         </span>
       </div>
     </div>
