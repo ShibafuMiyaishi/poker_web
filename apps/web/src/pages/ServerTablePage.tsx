@@ -5,24 +5,24 @@ import { SectionLabel } from '../components/primitives/SectionLabel';
 import { serverDriver } from '../lib/serverDriver';
 import { useTableStore } from '../stores/tableStore';
 
-function statusLabel(s: string): { jp: string; en: string; tone: 'good' | 'warn' | 'bad' } {
+function statusLabel(s: string): { jp: string; tone: 'good' | 'warn' | 'bad' } {
   switch (s) {
     case 'connecting':
-      return { jp: '接続中', en: 'connecting…', tone: 'warn' };
+      return { jp: '接続中', tone: 'warn' };
     case 'connected':
-      return { jp: '接続済', en: 'connected', tone: 'good' };
+      return { jp: '接続済', tone: 'good' };
     case 'disconnected':
-      return { jp: '切断中', en: 'reconnecting…', tone: 'bad' };
+      return { jp: '切断 / 再接続中', tone: 'bad' };
     case 'error':
-      return { jp: 'エラー', en: 'reconnecting…', tone: 'bad' };
+      return { jp: 'エラー / 再接続中', tone: 'bad' };
     default:
-      return { jp: '待機', en: 'idle', tone: 'warn' };
+      return { jp: '待機', tone: 'warn' };
   }
 }
 
 export function ServerTablePage() {
   const connection = useTableStore((s) => s.connection);
-  const { jp, en, tone } = statusLabel(connection);
+  const { jp, tone } = statusLabel(connection);
 
   useEffect(() => {
     void serverDriver.connect();
@@ -40,15 +40,18 @@ export function ServerTablePage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <SectionLabel jp="相席卓" en="Online Table" />
-        <div className="flex items-center gap-2 text-[11px]">
-          <span className={`w-2 h-2 rounded-full ${dot}`} />
+      <header className="flex items-center justify-between gap-3 flex-wrap border-b border-brass/20 pb-3">
+        <SectionLabel jp="相席卓" en="Online Table" size="lg" />
+        <output
+          className="flex items-center gap-2 text-[11px]"
+          aria-live="polite"
+          aria-label="接続状態"
+        >
+          <span className={`w-2 h-2 rounded-full ${dot}`} aria-hidden="true" />
           <span className="font-jp tracking-widest">{jp}</span>
-          <span className="font-display italic text-brass">{en}</span>
-        </div>
-      </div>
-      <p className="text-[11px] text-ivory-muted font-display italic">
+        </output>
+      </header>
+      <p className="text-[11px] text-ivory-muted font-jp leading-relaxed">
         TableDO の上で全プレイヤー（あなた・CPU・友人）がリアルタイムに同卓します。
       </p>
       <SitPanel />

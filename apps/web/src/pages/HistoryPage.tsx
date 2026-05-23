@@ -38,28 +38,31 @@ export function HistoryPage() {
   };
 
   if (loading) {
-    return <div className="text-sm text-ivory-dim font-display italic">loading hand log…</div>;
+    return <div className="text-sm text-ivory-dim font-jp tracking-widest">読み込み中…</div>;
   }
   if (error) {
     return (
-      <div className="text-sm text-crimson-glow font-display italic">
-        {error}（wrangler dev 起動中？）
-      </div>
+      <div className="text-sm text-crimson-glow font-jp">{error}（wrangler dev 起動中？）</div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <SectionLabel jp="ハンド記録" en="Hand Log" />
+      <header className="border-b border-brass/20 pb-3">
+        <SectionLabel jp="ハンド記録" en="Hand Log" size="lg" />
+      </header>
       <div className="grid gap-4 md:grid-cols-[1fr_2fr]">
         {/* List */}
         <div className="relative rounded-md border border-brass/20 bg-gradient-to-b from-ink-deep/95 to-ink/95 p-3 shadow-card">
           <div className="absolute top-0 left-3 right-3 h-px bg-gradient-to-r from-transparent via-brass/30 to-transparent" />
-          <h3 className="font-display italic text-xs tracking-widest text-brass mb-2 mt-1">
-            HANDS · {hands.length}
-          </h3>
+          <div className="flex items-baseline gap-2 mb-2 mt-1">
+            <span className="font-jp text-sm text-ivory tracking-widest">ハンド一覧</span>
+            <span className="font-mono-tabular text-[10px] text-brass tabular-nums">
+              ({hands.length})
+            </span>
+          </div>
           {hands.length === 0 ? (
-            <p className="text-xs text-ivory-muted font-display italic mt-4">
+            <p className="text-xs text-ivory-muted font-jp mt-4 leading-relaxed">
               まだプレイ履歴がありません。卓に戻ってハンドを進めてください。
             </p>
           ) : (
@@ -80,7 +83,7 @@ export function HistoryPage() {
                     </span>
                     <span className="font-display text-xs text-ivory">{h.hole_cards}</span>
                     <span
-                      className={`text-xs font-mono-tabular font-semibold shrink-0 ${
+                      className={`text-xs font-mono-tabular font-semibold shrink-0 tabular-nums ${
                         h.net_chips >= 0 ? 'text-jade-glow' : 'text-crimson-glow'
                       }`}
                     >
@@ -100,13 +103,13 @@ export function HistoryPage() {
           {selected ? (
             <div className="space-y-3 text-xs">
               <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="flex items-baseline gap-2">
-                  <h3 className="font-display italic text-sm text-brass tracking-widest">
+                <div className="flex items-baseline gap-3">
+                  <h3 className="font-jp text-base text-ivory tracking-wider">
                     {formatDate(selected.hand.started_at)}
                   </h3>
                   <span className="font-jp text-ivory-dim">
-                    pot{' '}
-                    <span className="brass-text font-bold font-mono-tabular">
+                    ポット{' '}
+                    <span className="brass-text font-display font-bold font-mono-tabular text-base">
                       {selected.hand.pot_total}
                     </span>
                   </span>
@@ -114,9 +117,9 @@ export function HistoryPage() {
                 <button
                   type="button"
                   onClick={() => copyText(selected.hand.pokerstars_text)}
-                  className="text-[10px] px-3 py-1.5 rounded brass-surface font-display tracking-widest hover:brightness-110"
+                  className="text-[10px] px-3 py-1.5 rounded-md brass-surface font-jp tracking-widest hover:brightness-110"
                 >
-                  Copy PokerStars 形式
+                  PokerStars 形式コピー
                 </button>
               </div>
               <div className="text-ivory-muted">
@@ -125,7 +128,7 @@ export function HistoryPage() {
               </div>
               <HandReplay detail={selected} />
               <details className="group">
-                <summary className="cursor-pointer text-ivory-muted hover:text-brass font-display italic tracking-widest text-[11px] select-none">
+                <summary className="cursor-pointer text-ivory-muted hover:text-brass font-jp tracking-widest text-[11px] select-none">
                   PokerStars テキスト ▾
                 </summary>
                 <pre className="mt-2 p-3 bg-ink-deepest/90 border border-brass/20 rounded text-[10px] leading-relaxed max-h-72 overflow-auto whitespace-pre-wrap font-mono-tabular">
@@ -134,9 +137,7 @@ export function HistoryPage() {
               </details>
             </div>
           ) : (
-            <p className="text-xs text-ivory-muted font-display italic">
-              左から 1 ハンド選んで詳細を表示
-            </p>
+            <p className="text-xs text-ivory-muted font-jp">左から 1 ハンド選んで詳細を表示</p>
           )}
         </div>
       </div>
