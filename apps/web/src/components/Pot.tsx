@@ -4,14 +4,14 @@ import { ChipStack } from './Chip';
 interface Props {
   amount: number;
   currentBet?: number;
+  compact?: boolean;
 }
 
-// Pot v3 — 銅鏡 (bronze mirror) スタイル:
-//   円形 brass ring + ring 上に「POT」刻印 + 内側に大型数字。
-//   数字変化時に微振動 (pot-tick)。
-//   aria-live で読み上げ。
-export function Pot({ amount, currentBet = 0 }: Props) {
-  // 直前 amount を覚えておき、変化時だけアニメ
+// Pot v4 — 銅鏡 (bronze mirror):
+//   円形 brass ring に "POT · ポット" を上弧刻印 + 内側に大型 brass-text 数字。
+//   デスクトップで 200×116px、モバイルで 150×88px。
+//   pot 変化時に pot-tick 微振動 + aria-live。
+export function Pot({ amount, currentBet = 0, compact = false }: Props) {
   const [prev, setPrev] = useState(amount);
   const [tick, setTick] = useState(0);
   useEffect(() => {
@@ -21,98 +21,89 @@ export function Pot({ amount, currentBet = 0 }: Props) {
     }
   }, [amount, prev]);
 
-  // 短く tick して反復可能にする key
-  const tickKey = `tick-${tick}`;
+  const w = compact ? 150 : 200;
+  const h = compact ? 88 : 116;
+  const fontSize = compact ? 'text-3xl' : 'text-4xl sm:text-5xl';
 
   return (
     <div className="flex flex-col items-center select-none">
-      {/* チップ pile (背景的) */}
       <ChipStack amount={amount} showLabel={false} />
-
-      {/* 銅鏡: SVG arc に "POT" を曲げて刻印 */}
-      <div className="relative mt-2 flex flex-col items-center">
-        <svg width="0" height="0" className="absolute" aria-hidden="true">
+      <div className="relative mt-1.5 sm:mt-2">
+        <svg
+          width={w}
+          height={h}
+          viewBox="0 0 200 116"
+          aria-hidden="true"
+          className="drop-shadow-[0_6px_22px_rgba(0,0,0,0.55)]"
+        >
           <defs>
-            <path id="pot-arc" d="M 10 60 Q 70 0 130 60" />
+            <linearGradient id="pot-ring" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#fde68a" />
+              <stop offset="50%" stopColor="#c89f48" />
+              <stop offset="100%" stopColor="#6f5520" />
+            </linearGradient>
+            <radialGradient id="pot-inside" cx="50%" cy="40%" r="60%">
+              <stop offset="0%" stopColor="#0c1a14" />
+              <stop offset="100%" stopColor="#04070a" />
+            </radialGradient>
+            <path id="pot-arc-top" d="M 22 60 Q 100 -10 178 60" />
           </defs>
+          {/* outer brass ring */}
+          <ellipse cx="100" cy="58" rx="92" ry="48" fill="url(#pot-ring)" />
+          {/* inner shadow band (depth) */}
+          <ellipse cx="100" cy="58" rx="86" ry="42" fill="#04070a" opacity="0.5" />
+          {/* inner dark */}
+          <ellipse cx="100" cy="58" rx="84" ry="40" fill="url(#pot-inside)" />
+          {/* inner thin brass line */}
+          <ellipse
+            cx="100"
+            cy="58"
+            rx="84"
+            ry="40"
+            fill="none"
+            stroke="#c89f48"
+            strokeWidth="0.8"
+            opacity="0.55"
+          />
+          {/* 上弧に "· POT · ポット ·" を彫る */}
+          <text
+            fontSize="12"
+            fontFamily="Fraunces, serif"
+            fontWeight="700"
+            fill="#f5d77a"
+            letterSpacing="8"
+          >
+            <textPath href="#pot-arc-top" startOffset="50%" textAnchor="middle">
+              · POT · ポット ·
+            </textPath>
+          </text>
         </svg>
 
-        <div className="relative">
-          {/* 円形 brass ring */}
-          <svg
-            width="160"
-            height="92"
-            viewBox="0 0 160 92"
-            aria-hidden="true"
-            className="drop-shadow-[0_6px_18px_rgba(0,0,0,0.5)]"
+        {/* 数字オーバーレイ */}
+        <div
+          key={`tick-${tick}`}
+          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          style={{ paddingBottom: compact ? 6 : 10 }}
+        >
+          <span
+            className={`brass-text font-display ${fontSize} font-bold tabular-nums leading-none animate-pot-tick`}
+            aria-live="polite"
+            aria-atomic="true"
           >
-            <defs>
-              <linearGradient id="pot-ring" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#fde68a" />
-                <stop offset="50%" stopColor="#c89f48" />
-                <stop offset="100%" stopColor="#6f5520" />
-              </linearGradient>
-              <radialGradient id="pot-inside" cx="50%" cy="40%" r="60%">
-                <stop offset="0%" stopColor="#0c1a14" />
-                <stop offset="100%" stopColor="#04070a" />
-              </radialGradient>
-              <path id="pot-arc-top" d="M 16 50 Q 80 -4 144 50" />
-            </defs>
-            {/* outer ring */}
-            <ellipse cx="80" cy="46" rx="74" ry="38" fill="url(#pot-ring)" />
-            {/* inner dark */}
-            <ellipse cx="80" cy="46" rx="68" ry="32" fill="url(#pot-inside)" />
-            {/* inner brass thin line */}
-            <ellipse
-              cx="80"
-              cy="46"
-              rx="68"
-              ry="32"
-              fill="none"
-              stroke="#c89f48"
-              strokeWidth="0.6"
-              opacity="0.5"
-            />
-            {/* 「P O T · ポ ッ ト」を上弧に刻印 */}
-            <text
-              fontSize="9"
-              fontFamily="Fraunces, serif"
-              fontWeight="700"
-              fill="#f5d77a"
-              letterSpacing="6"
-            >
-              <textPath href="#pot-arc-top" startOffset="50%" textAnchor="middle">
-                · POT · ポット ·
-              </textPath>
-            </text>
-          </svg>
-
-          {/* 数字オーバーレイ: tick で微振動 */}
-          <div
-            key={tickKey}
-            className="absolute inset-0 flex items-center justify-center pointer-events-none"
-            style={{ paddingBottom: 8 }}
-          >
-            <span
-              className="brass-text font-display text-3xl sm:text-4xl font-bold tabular-nums leading-none animate-pot-tick"
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              {amount.toLocaleString()}
-            </span>
-          </div>
+            {amount.toLocaleString()}
+          </span>
         </div>
-
-        {/* to call の表示 (cool counterpoint: vermilion accent) */}
-        {currentBet > 0 && (
-          <div className="mt-1 inline-flex items-baseline gap-1.5 text-[10px] tabular-nums">
-            <span className="font-jp text-ivory-muted tracking-widest">コール</span>
-            <span className="vermilion-text font-display font-bold text-base">
-              {currentBet.toLocaleString()}
-            </span>
-          </div>
-        )}
       </div>
+
+      {/* to call */}
+      {currentBet > 0 && (
+        <div className="mt-1 inline-flex items-baseline gap-1.5 text-[10px] sm:text-xs tabular-nums">
+          <span className="font-jp text-ivory-muted tracking-widest">コール</span>
+          <span className="vermilion-text font-display font-bold text-base sm:text-lg">
+            {currentBet.toLocaleString()}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

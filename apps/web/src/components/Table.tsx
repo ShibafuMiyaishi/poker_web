@@ -1,5 +1,6 @@
 import type { Seat } from '@pokergo/shared';
 import { useEffect, useState } from 'react';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { getStoredUser } from '../lib/auth';
 import { useTableStore } from '../stores/tableStore';
 import { ActionPanel } from './ActionPanel';
@@ -10,8 +11,15 @@ import { SeatView } from './Seat';
 import { VineFrame } from './primitives/VineCorner';
 
 // 楕円卓レイアウト: 自席 = 視覚位置 0 (下中央)、時計回り。
-// 席は brass-rim wrapper の絶対子として配置 → felt の overflow:hidden に巻き込まれない。
-const VISUAL_POSITIONS: { top: string; left: string; position: 'top' | 'side' | 'bottom' }[] = [
+// デスクトップ: aspect-[16/9] で広い felt に席が周回。
+// モバイル: aspect-[4/5] portrait + 席をさらに外側に + compact 化。
+//
+// VISUAL_POSITIONS_DESKTOP: brass rim wrapper の絶対子として配置 → felt の overflow:hidden に巻き込まれず縁で食われない。
+const VISUAL_POSITIONS_DESKTOP: {
+  top: string;
+  left: string;
+  position: 'top' | 'side' | 'bottom';
+}[] = [
   { top: '93%', left: '50%', position: 'bottom' },
   { top: '77%', left: '14%', position: 'bottom' },
   { top: '42%', left: '2%', position: 'side' },
@@ -20,6 +28,18 @@ const VISUAL_POSITIONS: { top: string; left: string; position: 'top' | 'side' | 
   { top: '8%', left: '86%', position: 'top' },
   { top: '42%', left: '98%', position: 'side' },
   { top: '77%', left: '86%', position: 'bottom' },
+];
+
+// モバイル向け: 席が中央 board に被らないよう外周に追いやる + compact 化。
+const VISUAL_POSITIONS_MOBILE: typeof VISUAL_POSITIONS_DESKTOP = [
+  { top: '97%', left: '50%', position: 'bottom' },
+  { top: '83%', left: '6%', position: 'bottom' },
+  { top: '50%', left: '-4%', position: 'side' },
+  { top: '6%', left: '6%', position: 'top' },
+  { top: '-8%', left: '50%', position: 'top' },
+  { top: '6%', left: '94%', position: 'top' },
+  { top: '50%', left: '104%', position: 'side' },
+  { top: '83%', left: '94%', position: 'bottom' },
 ];
 
 function buildVisualOrder(yourSeat: Seat, seatCount = 8): Seat[] {
@@ -31,6 +51,7 @@ function buildVisualOrder(yourSeat: Seat, seatCount = 8): Seat[] {
 }
 
 export function Table() {
+  const isMobile = useIsMobile();
   const state = useTableStore((s) => s.state);
   const yourSeat = useTableStore((s) => s.yourSeat);
   const cpuNames = useTableStore((s) => s.cpuNames);
@@ -50,8 +71,11 @@ export function Table() {
 
   if (!state) {
     return (
-      <div className="flex items-center justify-center min-h-[40vh] text-sm text-ivory-dim">
-        <span className="font-jp tracking-widest">準備中</span>
+      <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3">
+        <div className="text-2xl font-display brass-text font-bold tracking-widest animate-pulse">
+          Pokergo
+        </div>
+        <div className="text-sm font-jp tracking-widest text-ivory-muted">準備中</div>
       </div>
     );
   }
@@ -62,11 +86,19 @@ export function Table() {
   const user = getStoredUser();
   const yourLabel = user?.handle ?? 'あなた';
 
+  const positions = isMobile ? VISUAL_POSITIONS_MOBILE : VISUAL_POSITIONS_DESKTOP;
+  // モバイルは縦長 portrait、デスクトップは横長
+  const aspect = isMobile ? 'aspect-[4/5]' : 'aspect-[16/9]';
+  // モバイルは felt 縁を緩く、デスクトップは強く丸める
+  const tableRadius = isMobile ? 'rounded-[36%]' : 'rounded-[40%]';
+  const innerRadius = isMobile ? 'rounded-[34%]' : 'rounded-[38%]';
+  const ornamentSize = isMobile ? 24 : 40;
+  const ornamentInset = isMobile ? 16 : 28;
+
   return (
     <div className="flex flex-col items-center gap-3 sm:gap-5 w-full">
-      {/* 卓情報バー: 帳簿風 (左 brass mark + 細い数字メタリスト) */}
+      {/* 卓情報バー */}
       <div className="flex items-stretch border border-brass/30 rounded-md bg-ink-deepest/70 backdrop-blur-sm overflow-hidden shadow-card text-[11px] sm:text-xs">
-        {/* 左 brass tag */}
         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-b from-brass-deep/40 to-brass-deep/10 border-r border-brass/30">
           <span className="font-display italic text-[10px] text-brass tracking-widest uppercase">
             Hand
@@ -90,21 +122,22 @@ export function Table() {
       </div>
 
       {/* 楕円卓 */}
-      <div className="relative w-full max-w-4xl aspect-[16/11] sm:aspect-[16/9]">
-        {/* brass rim + felt */}
-        <div className="absolute inset-0 rounded-[44%] sm:rounded-[40%] p-[6px] sm:p-[8px] brass-rim shadow-[0_30px_60px_-20px_rgba(0,0,0,0.7)]">
-          <div className="relative w-full h-full rounded-[42%] sm:rounded-[38%] felt-surface overflow-hidden">
-            <VineFrame size={40} inset={28} />
+      <div className={`relative w-full max-w-4xl ${aspect}`}>
+        <div
+          className={`absolute inset-0 ${tableRadius} p-[6px] sm:p-[8px] brass-rim shadow-[0_30px_60px_-20px_rgba(0,0,0,0.7)]`}
+        >
+          <div className={`relative w-full h-full ${innerRadius} felt-surface overflow-hidden`}>
+            <VineFrame size={ornamentSize} inset={ornamentInset} />
           </div>
         </div>
 
         {/* Board (中央) */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-          <Board state={state} />
+          <Board state={state} compact={isMobile} />
         </div>
 
         {/* 席 (brass-rim 外側、clip 影響なし) */}
-        {VISUAL_POSITIONS.map((pos, idx) => {
+        {positions.map((pos, idx) => {
           const seat = visualOrder[idx];
           if (seat === undefined) return null;
           const player = state.players.get(seat);
@@ -129,6 +162,7 @@ export function Table() {
                 remainingMs={isToAct ? remainingMs : 0}
                 totalMs={isToAct ? actionTotal : 0}
                 position={pos.position}
+                compact={isMobile}
               />
             </div>
           );
