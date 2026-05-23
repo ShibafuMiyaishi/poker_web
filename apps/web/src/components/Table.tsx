@@ -1,5 +1,6 @@
 import type { Seat } from '@pokergo/shared';
 import { useEffect, useState } from 'react';
+import { getStoredUser } from '../lib/auth';
 import { useTableStore } from '../stores/tableStore';
 import { ActionPanel } from './ActionPanel';
 import { AnalysisPanel } from './AnalysisPanel';
@@ -8,16 +9,18 @@ import { HandStrengthBadge } from './HandStrengthBadge';
 import { SeatView } from './Seat';
 import { OrnamentFrame } from './primitives/Ornament';
 
-// 楕円卓: 0 = 自分 (下中央) 〜 7 を時計回り。
+// 楕円卓: visualOrder[0] = 自分 (下中央)、以降時計回り。
+// 席は brass-rim wrapper の絶対子要素として配置するため、felt の
+// overflow:hidden に巻き込まれず縁で食われない。
 const VISUAL_POSITIONS: { top: string; left: string; position: 'top' | 'side' | 'bottom' }[] = [
-  { top: '92%', left: '50%', position: 'bottom' },
-  { top: '78%', left: '15%', position: 'bottom' },
-  { top: '42%', left: '4%', position: 'side' },
-  { top: '10%', left: '18%', position: 'top' },
-  { top: '2%', left: '50%', position: 'top' },
-  { top: '10%', left: '82%', position: 'top' },
-  { top: '42%', left: '96%', position: 'side' },
-  { top: '78%', left: '85%', position: 'bottom' },
+  { top: '93%', left: '50%', position: 'bottom' }, // 0: あなた (bottom-center)
+  { top: '77%', left: '14%', position: 'bottom' }, // 1
+  { top: '42%', left: '2%', position: 'side' }, // 2
+  { top: '8%', left: '14%', position: 'top' }, // 3
+  { top: '-4%', left: '50%', position: 'top' }, // 4: top-center
+  { top: '8%', left: '86%', position: 'top' }, // 5
+  { top: '42%', left: '98%', position: 'side' }, // 6
+  { top: '77%', left: '86%', position: 'bottom' }, // 7
 ];
 
 function buildVisualOrder(yourSeat: Seat, seatCount = 8): Seat[] {
@@ -58,75 +61,80 @@ export function Table() {
   const youWon = winners?.some((w) => w.seat === yourSeat) ?? false;
   const yourPlayer = state.players.get(yourSeat);
   const visualOrder = buildVisualOrder(yourSeat);
+  const user = getStoredUser();
+  const yourLabel = user?.handle ?? 'あなた';
 
   return (
-    <div className="flex flex-col items-center gap-3 sm:gap-4 w-full">
-      {/* 卓ステータスバー */}
-      <div className="text-[11px] text-ivory-dim flex items-center gap-4 flex-wrap justify-center brass-surface rounded-full px-4 py-1">
-        <span className="font-display italic tracking-widest">
-          Hand <span className="brass-text font-bold">#{handsPlayed + 1}</span>
-        </span>
-        <span className="opacity-50">·</span>
-        <span className="font-jp tracking-wider">
-          {state.players.size} <span className="text-ivory-muted">人</span>
-        </span>
-        <span className="opacity-50">·</span>
-        <span className="font-mono-tabular tracking-wide">
-          {state.sb}/{state.bb} <span className="text-ivory-muted">bb</span>
-        </span>
-      </div>
-
-      {/* 楕円卓 */}
-      <div className="relative w-full max-w-4xl">
-        {/* brass rim outer */}
-        <div className="relative w-full aspect-[5/4] sm:aspect-[16/10] rounded-[44%] sm:rounded-[38%] p-[6px] sm:p-[8px] brass-rim shadow-felt">
-          {/* dark inner shadow ring */}
-          <div className="absolute inset-[6px] sm:inset-[8px] rounded-[42%] sm:rounded-[36%] shadow-[inset_0_4px_10px_rgba(0,0,0,0.5)] pointer-events-none z-20" />
-
-          {/* felt surface */}
-          <div className="relative w-full h-full rounded-[42%] sm:rounded-[36%] felt-surface overflow-hidden">
-            <OrnamentFrame size={28} inset={20} />
-
-            {/* center: Board + Pot */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-              <Board state={state} />
-            </div>
-
-            {/* seats */}
-            {VISUAL_POSITIONS.map((pos, idx) => {
-              const seat = visualOrder[idx];
-              if (seat === undefined) return null;
-              const player = state.players.get(seat);
-              const isYou = seat === yourSeat;
-              const isToAct = state.toAct === seat;
-              const isButton = state.buttonSeat === seat;
-              const label = isYou ? 'You' : (cpuNames.get(seat) ?? `Seat ${seat}`);
-              return (
-                <div
-                  key={seat}
-                  className="absolute -translate-x-1/2 -translate-y-1/2 z-30"
-                  style={{ top: pos.top, left: pos.left }}
-                >
-                  <SeatView
-                    seat={seat}
-                    player={player}
-                    isYou={isYou}
-                    isButton={isButton}
-                    isToAct={isToAct}
-                    showdownRevealed={showdownRevealed}
-                    label={label}
-                    remainingMs={isToAct ? remainingMs : 0}
-                    totalMs={isToAct ? actionTotal : 0}
-                    position={pos.position}
-                  />
-                </div>
-              );
-            })}
-          </div>
+    <div className="flex flex-col items-center gap-3 sm:gap-5 w-full">
+      {/* 卓情報バー: 横長フラットで brass の細線で区切る */}
+      <div className="inline-flex items-stretch divide-x divide-brass/25 border border-brass/30 rounded bg-gradient-to-b from-ink-deep/90 to-ink/90 text-[11px] sm:text-xs shadow-card">
+        <div className="px-3 sm:px-4 py-1.5 flex items-baseline gap-2">
+          <span className="font-jp text-ivory-muted tracking-widest">ハンド</span>
+          <span className="brass-text font-display font-bold tabular-nums">#{handsPlayed + 1}</span>
+        </div>
+        <div className="px-3 sm:px-4 py-1.5 flex items-baseline gap-2">
+          <span className="font-jp text-ivory-muted tracking-widest">参加</span>
+          <span className="text-ivory font-mono-tabular tabular-nums">{state.players.size}</span>
+          <span className="font-jp text-ivory-muted">人</span>
+        </div>
+        <div className="px-3 sm:px-4 py-1.5 flex items-baseline gap-2">
+          <span className="font-jp text-ivory-muted tracking-widest">ブラインド</span>
+          <span className="text-ivory font-mono-tabular tabular-nums">
+            {state.sb}/{state.bb}
+          </span>
         </div>
       </div>
 
-      {/* あなたの役 (verdict card) */}
+      {/* 楕円卓フレーム: brass-rim + felt + 席 (席は overflow の影響を受けない) */}
+      <div className="relative w-full max-w-4xl aspect-[16/11] sm:aspect-[16/9]">
+        {/* brass rim + felt (両方 clip 内) */}
+        <div className="absolute inset-0 rounded-[44%] sm:rounded-[40%] p-[6px] sm:p-[8px] brass-rim shadow-felt">
+          <div className="relative w-full h-full rounded-[42%] sm:rounded-[38%] felt-surface overflow-hidden">
+            {/* ornament 4 隅 (felt 内に収まる) */}
+            <OrnamentFrame size={26} inset={26} />
+            {/* 内 shadow ring */}
+            <div className="absolute inset-0 rounded-[100%] shadow-[inset_0_4px_14px_rgba(0,0,0,0.55)] pointer-events-none" />
+          </div>
+        </div>
+
+        {/* Board: 中央、felt の上に float */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+          <Board state={state} />
+        </div>
+
+        {/* 席: brass-rim wrapper の絶対子。felt の overflow:hidden に巻き込まれない */}
+        {VISUAL_POSITIONS.map((pos, idx) => {
+          const seat = visualOrder[idx];
+          if (seat === undefined) return null;
+          const player = state.players.get(seat);
+          const isYou = seat === yourSeat;
+          const isToAct = state.toAct === seat;
+          const isButton = state.buttonSeat === seat;
+          const label = isYou ? yourLabel : (cpuNames.get(seat) ?? `Seat ${seat}`);
+          return (
+            <div
+              key={seat}
+              className="absolute -translate-x-1/2 -translate-y-1/2 z-30"
+              style={{ top: pos.top, left: pos.left }}
+            >
+              <SeatView
+                seat={seat}
+                player={player}
+                isYou={isYou}
+                isButton={isButton}
+                isToAct={isToAct}
+                showdownRevealed={showdownRevealed}
+                label={label}
+                remainingMs={isToAct ? remainingMs : 0}
+                totalMs={isToAct ? actionTotal : 0}
+                position={pos.position}
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* あなたの役 (verdict) — フロップ以降のみ */}
       {yourPlayer && (
         <HandStrengthBadge
           holeCards={

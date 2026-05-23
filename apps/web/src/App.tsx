@@ -70,8 +70,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen text-ivory flex flex-col">
-      {/* ヘッダ: brass の細線 + 編集デザイン */}
-      <header className="relative border-b border-brass/25 bg-gradient-to-b from-ink-deepest/95 via-ink-deep/95 to-transparent backdrop-blur">
+      {/* ヘッダ: sticky で常時表示、brass の細線 + 編集デザイン */}
+      <header className="sticky top-0 z-40 border-b border-brass/25 bg-ink-deepest/85 backdrop-blur-md supports-[backdrop-filter]:bg-ink-deepest/70">
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brass to-transparent" />
         <div className="px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-wrap gap-3 max-w-7xl mx-auto">
           <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
@@ -110,11 +110,15 @@ export default function App() {
               ))}
             </nav>
           </div>
-          <div className="text-[11px] flex items-center gap-2 flex-wrap">
+          <div className="text-[11px] flex items-center gap-3 flex-wrap">
             {user ? (
               <>
-                <span className="font-display italic text-ivory-dim">welcome,</span>
-                <span className="font-jp text-ivory text-sm tracking-wider">{user.handle}</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="font-display italic text-[10px] text-ivory-muted tracking-widest uppercase">
+                    Player
+                  </span>
+                  <span className="font-jp text-ivory text-sm tracking-wider">{user.handle}</span>
+                </div>
                 <button
                   type="button"
                   onClick={startGoogleLogin}

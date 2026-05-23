@@ -4,15 +4,11 @@ import { handDriver } from '../lib/handDriver';
 import { serverDriver } from '../lib/serverDriver';
 import { useTableStore } from '../stores/tableStore';
 
-// "Botanical Casino" 風: 真鍮CTA + 朱・翡翠・骨色のアクセント。
-// 仕様 §11.2.2 のアクション UI、bet スライダー + 5 つの quick chip。
-//
-// Button hierarchy:
-//   FOLD = 朱 crimson (危険/降車)
-//   CHECK = 骨色 bone (中立)
-//   CALL = 翡翠 jade (前進)
-//   BET/RAISE = brass / 真鍮 (主アクション)
-//   ALL-IN = brass-glow / 警告金 (最終手段)
+// Pokergo "Botanical Casino" アクションパネル v2:
+// - 5 色階層 CTA (FOLD 朱 / CHECK 灰 / CALL 翡翠 / RAISE/BET 真鍮高コントラスト / ALL-IN brass-glow)
+// - スライダーは 1 行コンパクト (min — thumb — max)
+// - quick chip ボタンは 4 + MAX を別ライン分離
+// - RAISE は中央数字を ivory 系の太字で視認性を確保
 export function ActionPanel() {
   const state = useTableStore((s) => s.state);
   const yourSeat = useTableStore((s) => s.yourSeat);
@@ -126,7 +122,7 @@ export function ActionPanel() {
           <ActionButton
             kind="jade"
             label="CALL"
-            sub={toCall.toString()}
+            sub={`${toCall.toLocaleString()}`}
             onClick={() => submit({ seat: yourSeat, type: 'call' })}
           />
         )}
@@ -134,7 +130,7 @@ export function ActionPanel() {
           <ActionButton
             kind="brass"
             label={isRaise ? 'RAISE' : 'BET'}
-            sub={`to ${betValue}`}
+            sub={`to ${betValue.toLocaleString()}`}
             wide
             disabled={betValue < minRaiseTotal || betValue > maxRaiseTotal}
             onClick={() =>
@@ -150,18 +146,18 @@ export function ActionPanel() {
           <ActionButton
             kind="brass-glow"
             label="ALL-IN"
-            sub={player.stack.toString()}
+            sub={player.stack.toLocaleString()}
             onClick={() => submit({ seat: yourSeat, type: 'all_in' })}
           />
         )}
       </div>
 
-      {/* ベットスライダー + クイックチップ */}
+      {/* ベットスライダー: コンパクト 1 行 + quick chip + MAX */}
       {canBetOrRaise && minRaiseTotal < maxRaiseTotal && (
-        <div className="flex flex-col gap-2 px-3 py-2.5 rounded-md border border-brass/25 bg-gradient-to-b from-ink-deep/95 to-ink/95 shadow-card">
-          {/* スライダー */}
+        <div className="flex flex-col gap-2 px-3 py-2 rounded-md border border-brass/25 bg-gradient-to-b from-ink-deep/95 to-ink/95 shadow-card">
+          {/* 1 行で min - slider - 値 - max */}
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-display italic text-ivory-muted shrink-0 tabular-nums">
+            <span className="text-[10px] font-mono-tabular text-ivory-muted shrink-0 tabular-nums w-10 text-right">
               {minRaiseTotal}
             </span>
             <input
@@ -174,27 +170,24 @@ export function ActionPanel() {
               className="flex-1 h-6"
               aria-label="ベット額スライダー"
             />
-            <span className="text-[10px] font-display italic text-ivory-muted shrink-0 tabular-nums">
-              {maxRaiseTotal}
+            <div className="flex items-baseline gap-1 shrink-0 min-w-[68px] justify-end">
+              <span className="brass-text font-display text-xl font-bold tabular-nums leading-none">
+                {betValue.toLocaleString()}
+              </span>
+            </div>
+            <span className="text-[10px] font-mono-tabular text-ivory-muted shrink-0 tabular-nums w-10">
+              {maxRaiseTotal.toLocaleString()}
             </span>
           </div>
 
-          {/* 中央の現在値 */}
-          <div className="flex justify-center items-baseline gap-2">
-            <span className="font-jp text-[10px] text-ivory-dim tracking-wider">ベット額</span>
-            <span className="brass-text font-display text-2xl sm:text-3xl font-bold tabular-nums leading-none">
-              {betValue.toLocaleString()}
-            </span>
-          </div>
-
-          {/* クイックチップボタン */}
+          {/* quick chips + MAX */}
           <div className="grid grid-cols-5 gap-1.5">
             {quickFractions.map(({ label, frac }) => (
               <button
                 key={label}
                 type="button"
                 onClick={() => setQuickBet(frac)}
-                className="h-9 rounded border border-brass/25 bg-ink-deep/80 hover:bg-ink/80 hover:border-brass/50 text-xs font-display font-semibold text-ivory transition"
+                className="h-8 rounded border border-brass/25 bg-ink-deep/80 hover:bg-ink/80 hover:border-brass/55 text-xs font-display font-semibold text-ivory transition"
               >
                 {label}
               </button>
@@ -202,7 +195,7 @@ export function ActionPanel() {
             <button
               type="button"
               onClick={() => setBetValue(maxRaiseTotal)}
-              className="h-9 rounded brass-surface text-xs font-display font-bold text-ivory tracking-wider hover:brightness-110 transition"
+              className="h-8 rounded brass-surface text-xs font-display font-bold text-ivory tracking-wider hover:brightness-110 transition"
             >
               MAX
             </button>
@@ -226,13 +219,13 @@ interface ActionButtonProps {
 
 const KIND_STYLE: Record<ActionButtonProps['kind'], string> = {
   crimson:
-    'bg-gradient-to-b from-crimson to-[#7e1c1c] border border-crimson/40 text-ivory hover:brightness-110',
-  bone: 'bg-gradient-to-b from-ink-soft to-ink border border-bone/30 text-ivory hover:brightness-125',
-  jade: 'bg-gradient-to-b from-jade to-[#2f6a52] border border-jade/40 text-ivory hover:brightness-110',
+    'bg-gradient-to-b from-[#c1313c] to-[#8a1c22] border border-crimson/50 text-white hover:brightness-110 shadow-[0_4px_12px_rgba(178,42,42,0.4)]',
+  bone: 'bg-gradient-to-b from-ink-soft to-ink border border-bone/35 text-bone hover:bg-ink-soft hover:brightness-115',
+  jade: 'bg-gradient-to-b from-[#5fb38a] to-[#2f6a52] border border-jade/55 text-white hover:brightness-110 shadow-[0_4px_12px_rgba(74,157,122,0.35)]',
   brass:
-    'bg-gradient-to-b from-brass-light to-brass-deep border border-brass-glow/50 text-ink-deepest font-bold hover:brightness-110 shadow-brass',
+    'bg-gradient-to-b from-brass-light via-brass to-brass-deep border-2 border-brass-glow/70 text-ink-deepest font-bold hover:brightness-110 shadow-[0_4px_14px_rgba(245,215,122,0.45)]',
   'brass-glow':
-    'bg-gradient-to-b from-brass-glow via-brass-light to-brass border-2 border-brass-glow text-ink-deepest font-bold hover:brightness-110 shadow-[0_0_20px_rgba(245,215,122,0.5)]',
+    'bg-gradient-to-b from-brass-glow via-brass-light to-brass border-2 border-brass-glow text-ink-deepest font-bold hover:brightness-110 shadow-[0_0_24px_rgba(245,215,122,0.6)]',
 };
 
 function ActionButton({ kind, label, sub, onClick, disabled, wide }: ActionButtonProps) {
@@ -242,13 +235,15 @@ function ActionButton({ kind, label, sub, onClick, disabled, wide }: ActionButto
       disabled={disabled}
       onClick={onClick}
       className={`h-12 sm:h-14 rounded-md transition flex flex-col items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed ${
-        wide ? 'col-span-2 sm:col-span-1' : ''
+        wide ? 'col-span-2 sm:col-span-1 sm:min-w-[140px]' : 'sm:min-w-[100px]'
       } ${KIND_STYLE[kind]}`}
     >
       <span className="font-display text-sm sm:text-base tracking-widest leading-none">
         {label}
       </span>
-      <span className="text-[10px] font-mono-tabular opacity-85 tracking-wide mt-0.5">{sub}</span>
+      <span className="text-[10px] sm:text-[11px] font-mono-tabular opacity-90 tracking-wide mt-0.5 tabular-nums">
+        {sub}
+      </span>
     </button>
   );
 }
