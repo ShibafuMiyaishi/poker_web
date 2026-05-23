@@ -26,9 +26,9 @@ const STARTING_STACK = 1000;
 const SB = 5;
 const BB = 10;
 const SEATS = 8;
-const CPU_THINK_MIN_MS = 700;
-const CPU_THINK_MAX_MS = 2000;
-const SHOWDOWN_HOLD_MS = 3500;
+const CPU_THINK_MIN_MS = 600;
+const CPU_THINK_MAX_MS = 1600;
+const SHOWDOWN_HOLD_MS = 2200; // 3500 → 2200ms に短縮
 const HUMAN_TIMEOUT_MS = 10000;
 
 class HandDriver {
@@ -38,6 +38,9 @@ class HandDriver {
   private yourSeat: Seat = 0 as Seat;
   private buttonSeat: Seat = 1 as Seat;
   private humanTimer: ReturnType<typeof setTimeout> | null = null;
+  // ハンド間の待機タイマー。skipToNextHand で即座に消化する。
+  private interHandTimer: ReturnType<typeof setTimeout> | null = null;
+  private interHandResolve: (() => void) | null = null;
 
   constructor() {
     for (let i = 0; i < SEATS; i++) this.stacks.set(i as Seat, STARTING_STACK);
@@ -212,9 +215,33 @@ class HandDriver {
       }
     }
 
-    await delay(SHOWDOWN_HOLD_MS);
+    await this.waitBetweenHands();
     useTableStore.getState().setAnalysis(null);
     this.startNewHand();
+  }
+
+  // skipToNextHand で即解除可能なハンド間待機。
+  private waitBetweenHands(): Promise<void> {
+    return new Promise((resolve) => {
+      this.interHandResolve = resolve;
+      this.interHandTimer = setTimeout(() => {
+        this.interHandTimer = null;
+        this.interHandResolve = null;
+        resolve();
+      }, SHOWDOWN_HOLD_MS);
+    });
+  }
+
+  // ファストフォールド/早送り用。ハンド終了画面を即スキップして次ハンドへ。
+  skipToNextHand(): void {
+    if (this.interHandTimer) {
+      clearTimeout(this.interHandTimer);
+      this.interHandTimer = null;
+    }
+    if (this.interHandResolve) {
+      this.interHandResolve();
+      this.interHandResolve = null;
+    }
   }
 }
 
