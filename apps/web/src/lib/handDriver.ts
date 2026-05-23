@@ -57,7 +57,18 @@ class HandDriver {
   }
 
   startNewHand(): void {
+    // 既にハンド進行中なら no-op（React StrictMode の double-effect 対策）
+    if (useTableStore.getState().status === 'playing') return;
     this.clearHumanTimer();
+
+    // Auto-rebuy: 仕様 §3.1.1 F-G-05「100bb auto-rebuy」。BB 未満の席を 100bb に補充して常に 8 人卓を維持。
+    for (let i = 0; i < SEATS; i++) {
+      const s = i as Seat;
+      if ((this.stacks.get(s) ?? 0) < BB) {
+        this.stacks.set(s, STARTING_STACK);
+      }
+    }
+
     const participants: { seat: Seat; stack: number }[] = [];
     for (let i = 0; i < SEATS; i++) {
       const stack = this.stacks.get(i as Seat) ?? 0;
