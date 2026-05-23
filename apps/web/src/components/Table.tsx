@@ -98,6 +98,10 @@ export function Table() {
     return cards;
   }, [winners, showdownRevealed, state]);
 
+  // localStorage アクセスは初回のみ。Table は 100ms 間隔で再レンダされるため memo 化必須。
+  // Rules of Hooks に従い、早期 return より前に置く。
+  const yourLabel = useMemo(() => getStoredUser()?.handle ?? 'あなた', []);
+
   // すべての hooks の後に早期 return
   if (!state) {
     return (
@@ -113,8 +117,6 @@ export function Table() {
   const youWon = winners?.some((w) => w.seat === yourSeat) ?? false;
   const yourPlayer = state.players.get(yourSeat);
   const visualOrder = buildVisualOrder(yourSeat);
-  // localStorage アクセスは初回のみ。Table は 100ms 間隔で再レンダされるため memo 化必須。
-  const yourLabel = useMemo(() => getStoredUser()?.handle ?? 'あなた', []);
 
   const positions = isMobile ? VISUAL_POSITIONS_MOBILE : VISUAL_POSITIONS_DESKTOP;
   // モバイルは縦長 portrait、デスクトップは横長

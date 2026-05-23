@@ -13,19 +13,16 @@ export function WelcomeSplash() {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const dismissBtnRef = useRef<HTMLButtonElement | null>(null);
 
-  // body スクロール抑止 + 背後コンテンツの inert 化 (a11y フォーカストラップの最も確実な方法)
+  // body スクロール抑止 + 初期フォーカス。
+  // 注意: dialog 自身も #root の子として描画されるため #root に inert を付けると
+  // dialog 内のボタンまで無効化される。代わりに aria-modal="true" + 下の focus trap で a11y を担保する。
   useEffect(() => {
     if (seen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    // 兄弟要素を inert に (dialog 自身は除く)
-    const root = document.getElementById('root');
-    if (root) root.setAttribute('inert', '');
-    // 初期フォーカスを「卓につく」ボタンへ
     dismissBtnRef.current?.focus();
     return () => {
       document.body.style.overflow = prev;
-      if (root) root.removeAttribute('inert');
     };
   }, [seen]);
 
