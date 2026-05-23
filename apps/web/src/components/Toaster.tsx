@@ -30,9 +30,16 @@ export function toast(text: string, kind: ToastKind = 'info'): void {
 }
 
 const KIND_STYLE: Record<ToastKind, string> = {
-  info: 'bg-slate-800 border-slate-700 text-slate-100',
-  success: 'bg-win/20 border-win/50 text-win',
-  error: 'bg-lose/20 border-lose/50 text-lose',
+  info: 'bg-gradient-to-b from-ink-deep to-ink border-brass/40 text-ivory',
+  success:
+    'bg-gradient-to-b from-jade/20 to-jade/5 border-jade/50 text-jade-glow shadow-[0_0_18px_rgba(110,231,183,0.25)]',
+  error: 'bg-gradient-to-b from-crimson/20 to-crimson/5 border-crimson/50 text-crimson-glow',
+};
+
+const KIND_LABEL: Record<ToastKind, string> = {
+  info: '通知',
+  success: '完了',
+  error: '失敗',
 };
 
 export function Toaster() {
@@ -55,9 +62,12 @@ export function Toaster() {
           key={t.id}
           type="button"
           onClick={() => dismiss(t.id)}
-          className={`text-xs px-3 py-2 rounded border shadow-lg text-left ${KIND_STYLE[t.kind]}`}
+          className={`relative text-xs px-4 py-2 rounded-md border shadow-card text-left flex items-baseline gap-2 ${KIND_STYLE[t.kind]} animate-verdict`}
         >
-          {t.text}
+          <span className="font-jp text-[10px] tracking-widest opacity-80">
+            {KIND_LABEL[t.kind]}
+          </span>
+          <span className="font-display flex-1">{t.text}</span>
         </button>
       ))}
     </div>

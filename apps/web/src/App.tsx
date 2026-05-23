@@ -21,17 +21,23 @@ import { useTableStore } from './stores/tableStore';
 
 type View = 'table' | 'server' | 'history' | 'stats' | 'settings' | 'terms' | 'privacy';
 
-const NAV: { key: View; label: string }[] = [
-  { key: 'table', label: '卓 (ローカル)' },
-  { key: 'server', label: '卓 (サーバ)' },
-  { key: 'history', label: '履歴' },
-  { key: 'stats', label: '統計' },
+interface NavItem {
+  key: View;
+  jp: string;
+  en: string;
+}
+
+const NAV: NavItem[] = [
+  { key: 'table', jp: '卓', en: 'Table' },
+  { key: 'server', jp: '相席', en: 'Online' },
+  { key: 'history', jp: '履歴', en: 'History' },
+  { key: 'stats', jp: '統計', en: 'Stats' },
 ];
 
-const FOOTER_NAV: { key: View; label: string }[] = [
-  { key: 'settings', label: '設定' },
-  { key: 'terms', label: '利用規約' },
-  { key: 'privacy', label: 'プライバシー' },
+const FOOTER_NAV: NavItem[] = [
+  { key: 'settings', jp: '設定', en: 'Settings' },
+  { key: 'terms', jp: '利用規約', en: 'Terms' },
+  { key: 'privacy', jp: 'プライバシー', en: 'Privacy' },
 ];
 
 export default function App() {
@@ -63,48 +69,69 @@ export default function App() {
   const showAds = view === 'history' || view === 'stats';
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <header className="px-3 sm:px-4 py-3 border-b border-slate-800 flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
-          <button
-            type="button"
-            onClick={() => setView('table')}
-            className="text-lg font-semibold tracking-tight hover:text-accent"
-          >
-            Pokergo
-          </button>
-          <nav className="flex gap-1 text-xs flex-wrap">
-            {NAV.map((n) => (
-              <button
-                key={n.key}
-                type="button"
-                onClick={() => setView(n.key)}
-                className={`px-2.5 py-1 rounded ${view === n.key ? 'bg-accent' : 'bg-slate-800 hover:bg-slate-700'}`}
-              >
-                {n.label}
-              </button>
-            ))}
-          </nav>
-        </div>
-        <div className="text-xs text-slate-400 flex items-center gap-2 flex-wrap">
-          {user ? (
-            <>
-              <span className="text-slate-200">{user.handle}</span>
-              <button
-                type="button"
-                onClick={startGoogleLogin}
-                className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px]"
-              >
-                Google ログイン
-              </button>
-            </>
-          ) : (
-            <span>ゲストモード初期化中…</span>
-          )}
+    <div className="min-h-screen text-ivory flex flex-col">
+      {/* ヘッダ: brass の細線 + 編集デザイン */}
+      <header className="relative border-b border-brass/25 bg-gradient-to-b from-ink-deepest/95 via-ink-deep/95 to-transparent backdrop-blur">
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brass to-transparent" />
+        <div className="px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-wrap gap-3 max-w-7xl mx-auto">
+          <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setView('table')}
+              className="flex items-baseline gap-2 group"
+            >
+              <span className="font-display font-bold text-xl sm:text-2xl tracking-tight brass-text">
+                Pokergo
+              </span>
+              <span className="font-jp text-[10px] text-ivory-muted tracking-widest group-hover:text-brass transition">
+                ポーカーゴー
+              </span>
+            </button>
+            <nav className="flex gap-0 text-xs flex-wrap">
+              {NAV.map((n) => (
+                <button
+                  key={n.key}
+                  type="button"
+                  onClick={() => setView(n.key)}
+                  className={`relative px-3 py-2 transition group ${
+                    view === n.key ? 'text-brass' : 'text-ivory-dim hover:text-ivory'
+                  }`}
+                >
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="font-jp text-sm">{n.jp}</span>
+                    <span className="font-display italic text-[10px] tracking-widest uppercase opacity-70">
+                      {n.en}
+                    </span>
+                  </div>
+                  {view === n.key && (
+                    <div className="absolute bottom-0 left-2 right-2 h-px bg-gradient-to-r from-transparent via-brass to-transparent" />
+                  )}
+                </button>
+              ))}
+            </nav>
+          </div>
+          <div className="text-[11px] flex items-center gap-2 flex-wrap">
+            {user ? (
+              <>
+                <span className="font-display italic text-ivory-dim">welcome,</span>
+                <span className="font-jp text-ivory text-sm tracking-wider">{user.handle}</span>
+                <button
+                  type="button"
+                  onClick={startGoogleLogin}
+                  className="px-3 py-1 rounded brass-surface text-[10px] font-display tracking-widest hover:brightness-110 transition"
+                >
+                  Google サインイン
+                </button>
+              </>
+            ) : (
+              <span className="font-display italic text-ivory-muted">authenticating…</span>
+            )}
+          </div>
         </div>
       </header>
 
-      <main className="p-3 sm:p-4 flex-1">
+      {/* メインビュー */}
+      <main className="p-3 sm:p-6 flex-1 max-w-7xl w-full mx-auto">
         {view === 'table' && <TablePage />}
         {view === 'server' && <ServerTablePage />}
         {view === 'history' && (
@@ -124,20 +151,31 @@ export default function App() {
         {view === 'privacy' && <PrivacyPage />}
       </main>
 
-      <footer className="px-3 sm:px-4 py-3 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-500 flex-wrap gap-2">
-        <span>仮想チップのみ・現実通貨との交換不可</span>
-        <nav className="flex gap-3">
-          {FOOTER_NAV.map((n) => (
-            <button
-              key={n.key}
-              type="button"
-              onClick={() => setView(n.key)}
-              className="hover:text-slate-300"
-            >
-              {n.label}
-            </button>
-          ))}
-        </nav>
+      {/* フッタ: 編集デザイン的、brass ライン */}
+      <footer className="relative border-t border-brass/20 bg-gradient-to-t from-ink-deepest to-transparent">
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brass/40 to-transparent" />
+        <div className="px-3 sm:px-6 py-4 flex items-center justify-between text-[10px] text-ivory-muted flex-wrap gap-3 max-w-7xl mx-auto">
+          <div className="flex items-center gap-2 font-display italic tracking-widest">
+            <span className="font-jp tracking-widest text-ivory-dim">仮想チップのみ</span>
+            <span className="opacity-60">·</span>
+            <span>virtual chips only — no real-money exchange</span>
+          </div>
+          <nav className="flex gap-4">
+            {FOOTER_NAV.map((n) => (
+              <button
+                key={n.key}
+                type="button"
+                onClick={() => setView(n.key)}
+                className="flex items-baseline gap-1 hover:text-brass transition"
+              >
+                <span className="font-jp text-xs">{n.jp}</span>
+                <span className="font-display italic text-[10px] tracking-widest uppercase opacity-70">
+                  {n.en}
+                </span>
+              </button>
+            ))}
+          </nav>
+        </div>
       </footer>
 
       <Toaster />

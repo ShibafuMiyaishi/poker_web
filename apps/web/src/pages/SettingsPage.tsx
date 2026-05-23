@@ -1,3 +1,4 @@
+import { SectionLabel } from '../components/primitives/SectionLabel';
 import { clearAuth, getStoredUser, startGoogleLogin } from '../lib/auth';
 
 interface Props {
@@ -7,30 +8,38 @@ interface Props {
 export function SettingsPage({ onLogout }: Props) {
   const user = getStoredUser();
   return (
-    <div className="max-w-2xl mx-auto space-y-4 text-sm">
-      <h2 className="text-lg font-semibold">設定</h2>
+    <div className="max-w-2xl mx-auto space-y-5">
+      <SectionLabel jp="設定" en="Settings" />
 
-      <section className="bg-slate-900/60 rounded p-3 border border-slate-800">
-        <h3 className="text-sm font-semibold mb-2">アカウント</h3>
+      <section className="relative rounded-md border border-brass/25 bg-gradient-to-b from-ink-deep/95 to-ink/95 p-5 shadow-card">
+        <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-brass/40 to-transparent" />
+        <div className="flex items-baseline gap-2 mb-3">
+          <span className="font-jp text-sm text-ivory tracking-widest">アカウント</span>
+          <span className="font-display italic text-xs text-brass tracking-widest uppercase opacity-70">
+            Account
+          </span>
+        </div>
         {user ? (
-          <div className="text-xs space-y-1">
-            <div className="text-slate-400">
-              ハンドル: <span className="text-slate-100">{user.handle}</span>
+          <div className="text-xs space-y-1.5">
+            <div className="flex items-baseline gap-2">
+              <span className="font-jp text-ivory-muted w-20 shrink-0">ハンドル</span>
+              <span className="font-display text-ivory text-base">{user.handle}</span>
             </div>
-            <div className="text-slate-400">
-              user_id: <span className="font-mono text-[10px] text-slate-300">{user.id}</span>
+            <div className="flex items-baseline gap-2">
+              <span className="font-jp text-ivory-muted w-20 shrink-0">user_id</span>
+              <span className="font-mono-tabular text-[10px] text-ivory-dim">{user.id}</span>
             </div>
           </div>
         ) : (
-          <p className="text-xs text-slate-400">未ログイン</p>
+          <p className="text-xs text-ivory-muted font-display italic">未ログイン</p>
         )}
-        <div className="mt-3 flex gap-2 flex-wrap">
+        <div className="mt-4 flex gap-2 flex-wrap">
           <button
             type="button"
             onClick={startGoogleLogin}
-            className="text-xs px-3 py-1.5 rounded bg-accent hover:bg-blue-500 font-semibold"
+            className="text-xs px-4 py-2 rounded-md brass-surface text-ivory font-display tracking-widest hover:brightness-110 transition"
           >
-            Google でログイン
+            Google でサインイン
           </button>
           <button
             type="button"
@@ -38,22 +47,31 @@ export function SettingsPage({ onLogout }: Props) {
               clearAuth();
               onLogout();
             }}
-            className="text-xs px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700"
+            className="text-xs px-4 py-2 rounded-md border border-crimson/40 bg-crimson/10 text-crimson-glow font-display tracking-widest hover:bg-crimson/20 transition"
           >
-            ログアウト（ゲストに戻る）
+            ログアウト
           </button>
         </div>
       </section>
 
-      <section className="bg-slate-900/60 rounded p-3 border border-slate-800">
-        <h3 className="text-sm font-semibold mb-2">バージョン / 情報</h3>
-        <ul className="text-xs text-slate-400 space-y-1">
-          <li>Pokergo v1 候補ビルド</li>
+      <section className="relative rounded-md border border-brass/25 bg-gradient-to-b from-ink-deep/95 to-ink/95 p-5 shadow-card">
+        <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-brass/40 to-transparent" />
+        <div className="flex items-baseline gap-2 mb-3">
+          <span className="font-jp text-sm text-ivory tracking-widest">情報</span>
+          <span className="font-display italic text-xs text-brass tracking-widest uppercase opacity-70">
+            About
+          </span>
+        </div>
+        <ul className="text-xs text-ivory-dim space-y-1">
           <li>
-            ソース:{' '}
+            <span className="font-display italic text-brass">Pokergo</span>
+            <span className="font-jp ml-2">v1 候補ビルド</span>
+          </li>
+          <li>
+            <span className="font-jp">ソース:</span>{' '}
             <a
               href="https://github.com/ShibafuMiyaishi/poker_web"
-              className="text-accent hover:underline"
+              className="text-brass hover:text-brass-light underline-offset-2 hover:underline"
               target="_blank"
               rel="noreferrer noopener"
             >

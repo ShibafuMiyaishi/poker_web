@@ -8,8 +8,6 @@ export function SitPanel() {
   const mode = useTableStore((s) => s.mode);
   if (mode !== 'server' || !state) return null;
 
-  // 自分が着席済みかは yourSeat ではなく state.players.has で判定するが、
-  // tableStore.yourSeat を信頼する。state がまだ載っていなければ着席候補なし。
   const occupiedSeats = new Set<Seat>();
   for (const seat of state.players.keys()) occupiedSeats.add(seat);
   const emptySeats: Seat[] = [];
@@ -20,18 +18,23 @@ export function SitPanel() {
   if (emptySeats.length === 0) return null;
 
   return (
-    <div className="text-xs text-slate-300 mt-3 flex items-center gap-2">
-      <span>空席:</span>
-      {emptySeats.map((s) => (
-        <button
-          key={`sit-${s}`}
-          type="button"
-          onClick={() => serverDriver.sit(s)}
-          className="px-2 py-1 rounded bg-accent hover:bg-blue-500 font-semibold"
-        >
-          seat {s}
-        </button>
-      ))}
+    <div className="rounded-md border border-brass/25 bg-gradient-to-b from-ink-deep/95 to-ink/95 px-3 py-2 flex items-center gap-2 flex-wrap shadow-card">
+      <span className="font-jp text-xs text-ivory-dim tracking-widest">空席</span>
+      <span className="font-display italic text-[10px] text-brass tracking-widest uppercase opacity-70">
+        open seats
+      </span>
+      <div className="flex gap-1.5 flex-wrap ml-2">
+        {emptySeats.map((s) => (
+          <button
+            key={`sit-${s}`}
+            type="button"
+            onClick={() => serverDriver.sit(s)}
+            className="px-3 py-1 rounded brass-surface text-xs font-display font-semibold tracking-widest hover:brightness-110 transition"
+          >
+            seat {s}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
