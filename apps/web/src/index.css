@@ -352,6 +352,21 @@ body::before {
   color: transparent;
 }
 
+/* hi-jade — キャッチコピー強調ハイライター (Ten-Four 風)。
+   緑のマーカー下線で重要語をスポットする。Botanical の moss/jade と整合。 */
+.hi-jade {
+  background: linear-gradient(
+    to bottom,
+    transparent 55%,
+    rgba(110, 231, 183, 0.35) 55%,
+    rgba(110, 231, 183, 0.18) 88%,
+    transparent 100%
+  );
+  padding: 0 0.25em;
+  font-weight: 700;
+  color: #d4f5e0;
+}
+
 /* Ink seal (印章) — 朱の四角い印 */
 .ink-seal {
   background: radial-gradient(circle at 30% 30%, #e85d4a, #c14a3d 60%, #6e1a1f);

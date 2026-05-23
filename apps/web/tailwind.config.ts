@@ -64,9 +64,12 @@ export default {
       },
       fontFamily: {
         display: ['"Fraunces"', 'ui-serif', 'Georgia', 'serif'],
-        sans: ['"Manrope"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['"Manrope"', '"Noto Sans JP"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+        // jp = 和文 明朝 (見出し / 朱印感のあるブランド要素)
         jp: ['"Shippori Mincho B1"', '"Noto Serif JP"', '"Yu Mincho"', 'serif'],
+        // jp-sans = 和文 ゴシック (本文用、可読性優先)
+        'jp-sans': ['"Noto Sans JP"', '"Hiragino Sans"', '"Yu Gothic"', 'sans-serif'],
       },
       letterSpacing: {
         widest: '0.18em',

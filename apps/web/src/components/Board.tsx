@@ -49,7 +49,7 @@ export function Board({ state, compact = false }: Props) {
       </div>
 
       <div className={compact ? 'mt-1' : 'mt-2'}>
-        <Pot amount={state.pot} currentBet={state.currentBet} compact={compact} />
+        <Pot amount={state.pot} currentBet={state.currentBet} bb={state.bb} compact={compact} />
       </div>
     </div>
   );

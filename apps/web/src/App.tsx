@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AdSlot } from './components/AdSlot';
 import { Toaster } from './components/Toaster';
-import { WelcomeSplash } from './components/WelcomeSplash';
 import { LogoMark } from './components/primitives/LogoMark';
 import { flushPendingQueue } from './lib/api';
 import {
@@ -13,6 +12,7 @@ import {
   startGoogleLogin,
 } from './lib/auth';
 import { HistoryPage } from './pages/HistoryPage';
+import { LandingPage } from './pages/LandingPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { ServerTablePage } from './pages/ServerTablePage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -21,7 +21,9 @@ import { TablePage } from './pages/TablePage';
 import { TermsPage } from './pages/TermsPage';
 import { useTableStore } from './stores/tableStore';
 
-type View = 'table' | 'server' | 'history' | 'stats' | 'settings' | 'terms' | 'privacy';
+type View = 'landing' | 'table' | 'server' | 'history' | 'stats' | 'settings' | 'terms' | 'privacy';
+
+const LANDING_SEEN_KEY = 'pokergo_seen_intro_v1';
 
 // bilingual を絞る: ナビは漢字のみ。en は H1 等、選ばれた箇所だけ。
 const NAV: { key: View; label: string }[] = [
@@ -38,12 +40,19 @@ const FOOTER_NAV: { key: View; label: string }[] = [
 ];
 
 export default function App() {
-  const [view, setView] = useState<View>('table');
+  const [view, setView] = useState<View>(() => {
+    // 初回訪問 (ランディング未閲覧) は LP を最初に出す
+    if (typeof localStorage !== 'undefined' && localStorage.getItem(LANDING_SEEN_KEY) !== '1') {
+      return 'landing';
+    }
+    return 'table';
+  });
   const [user, setUser] = useState<PokergoUser | null>(() => {
     const fromUrl = consumeJwtFromUrl();
     return fromUrl ?? getStoredUser();
   });
   const setMode = useTableStore((s) => s.setMode);
+  const handsPlayed = useTableStore((s) => s.handsPlayed);
 
   useEffect(() => {
     if (!user) {
@@ -64,6 +73,12 @@ export default function App() {
   }, [view, setMode]);
 
   const showAds = view === 'history' || view === 'stats';
+
+  // ランディング → 卓へ遷移する関数 (LP 「すぐ卓につく」)
+  const goToTable = () => {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(LANDING_SEEN_KEY, '1');
+    setView('table');
+  };
 
   return (
     <div className="min-h-screen text-ivory flex flex-col relative">
@@ -109,14 +124,23 @@ export default function App() {
           <div className="text-[11px] flex items-center gap-3 flex-wrap">
             {user ? (
               <>
-                <span className="font-jp text-ivory text-sm tracking-wider">{user.handle}</span>
-                <button
-                  type="button"
-                  onClick={startGoogleLogin}
-                  className="px-3 py-1 rounded-md brass-surface text-[10px] font-display tracking-widest hover:brightness-110 transition"
-                >
-                  Google サインイン
-                </button>
+                {/* 累計ハンド指標 (Ten-Four 風 看板ステータス) */}
+                <div className="hidden sm:flex items-center gap-2 text-[10px] font-jp-sans tracking-widest text-ivory-muted">
+                  <span className="font-mono-tabular text-brass-light">{handsPlayed}</span>
+                  <span>ハンド</span>
+                </div>
+                <span className="font-jp-sans text-ivory text-sm tracking-wider">
+                  {user.handle}
+                </span>
+                {user.handle.startsWith('Guest-') ? (
+                  <button
+                    type="button"
+                    onClick={startGoogleLogin}
+                    className="px-3 py-1 rounded-md brass-surface text-[10px] font-display tracking-widest hover:brightness-110 transition"
+                  >
+                    Google でログイン
+                  </button>
+                ) : null}
               </>
             ) : (
               <span className="font-display italic text-ivory-muted">認証中…</span>
@@ -128,6 +152,9 @@ export default function App() {
       {/* メインビュー */}
       <main id="main" className="p-3 sm:p-6 flex-1 max-w-7xl w-full mx-auto relative z-10">
         <div className="animate-rise" key={view}>
+          {view === 'landing' && (
+            <LandingPage onStart={goToTable} onGoogleLogin={startGoogleLogin} />
+          )}
           {view === 'table' && <TablePage />}
           {view === 'server' && <ServerTablePage />}
           {view === 'history' && (
@@ -176,7 +203,7 @@ export default function App() {
       </footer>
 
       <Toaster />
-      <WelcomeSplash />
+      {/* WelcomeSplash は LandingPage で代替済み (重複モーダル排除) */}
     </div>
   );
 }

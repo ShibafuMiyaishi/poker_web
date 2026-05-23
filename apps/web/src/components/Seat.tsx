@@ -1,6 +1,8 @@
 import type { HandPlayer } from '@pokergo/engine';
 import type { Seat as SeatType } from '@pokergo/shared';
 import { memo } from 'react';
+import { formatChips } from '../lib/format';
+import { useTableStore } from '../stores/tableStore';
 import { Card } from './Card';
 import { ChipStack } from './Chip';
 import { TimerBar } from './TimerBar';
@@ -23,6 +25,8 @@ interface Props {
   winningCards?: ReadonlySet<string> | undefined;
   // モバイル時は seat box を小さくして board card との衝突を避ける
   compact?: boolean;
+  // ハンドの BB サイズ (bb 単位表示用)
+  bb?: number;
 }
 
 function initial(label: string): string {
@@ -47,13 +51,20 @@ const POSITION_TONE: Record<string, string> = {
   default: 'text-brass-light border border-brass/45',
 };
 
-function shortStack(n: number): string {
+// チップ単位の短縮表示 (10000 → 10k)
+function shortChipStack(n: number): string {
   if (n >= 10_000) return `${Math.floor(n / 1000)}k`;
   if (n >= 1000) {
     const k = n / 1000;
     return Number.isInteger(k) ? `${k}k` : `${k.toFixed(1)}k`;
   }
   return n.toString();
+}
+
+// 設定に応じて bb / chip 切替。bb 単位なら formatChips、chip なら shortChipStack。
+function formatStack(n: number, bb: number, bbDisplay: boolean): string {
+  if (bbDisplay && bb > 0) return formatChips(n, bb, true);
+  return shortChipStack(n);
 }
 
 // React.memo: 親 (Table) の毎フレーム再レンダ時に席を不要に再描画させない。
@@ -72,7 +83,9 @@ function SeatViewImpl({
   pokerPosition,
   winningCards,
   compact = false,
+  bb = 10,
 }: Props) {
+  const bbDisplay = useTableStore((s) => s.bbDisplay);
   if (!player) return <EmptySeatChair seatNo={seat} />;
 
   const status = player.status;
@@ -177,7 +190,7 @@ function SeatViewImpl({
                 folded ? 'text-ivory-muted' : 'text-brass'
               }`}
             >
-              {shortStack(player.stack)}
+              {formatStack(player.stack, bb, bbDisplay)}
             </div>
           </div>
         )}
@@ -187,7 +200,7 @@ function SeatViewImpl({
               folded ? 'text-ivory-muted' : 'text-brass'
             }`}
           >
-            {shortStack(player.stack)}
+            {formatStack(player.stack, bb, bbDisplay)}
           </div>
         )}
       </div>

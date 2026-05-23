@@ -10,8 +10,10 @@ export function SettingsPage({ onLogout }: Props) {
   const user = getStoredUser();
   const sfxEnabled = useTableStore((s) => s.sfxEnabled);
   const motionEnabled = useTableStore((s) => s.motionEnabled);
+  const bbDisplay = useTableStore((s) => s.bbDisplay);
   const setSfxEnabled = useTableStore((s) => s.setSfxEnabled);
   const setMotionEnabled = useTableStore((s) => s.setMotionEnabled);
+  const setBbDisplay = useTableStore((s) => s.setBbDisplay);
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
@@ -80,6 +82,12 @@ export function SettingsPage({ onLogout }: Props) {
             description="カードやチップの動きを軽くしたい場合は off に。"
             checked={motionEnabled}
             onChange={setMotionEnabled}
+          />
+          <ToggleRow
+            label="bb 単位で表示"
+            description="ポット・スタック・ベットを bb (ビッグブラインド) 単位で表示。上級者向け。"
+            checked={bbDisplay}
+            onChange={setBbDisplay}
           />
         </div>
       </section>

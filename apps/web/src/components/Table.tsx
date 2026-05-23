@@ -214,6 +214,7 @@ export function Table() {
                 pokerPosition={pokerPosition}
                 winningCards={winningCardSet}
                 compact={isMobile}
+                bb={state.bb}
               />
             </div>
           );

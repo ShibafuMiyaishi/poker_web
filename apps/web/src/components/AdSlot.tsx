@@ -43,14 +43,17 @@ export function AdSlot({ slotId, format = 'auto', className }: Props) {
   }, []);
 
   if (!CLIENT_ID) {
-    // 開発時のプレースホルダ
-    return (
-      <div
-        className={`text-[10px] text-slate-600 bg-slate-900/40 border border-dashed border-slate-800 rounded p-2 text-center ${className ?? ''}`}
-      >
-        AdSense (slot {slotId}) — 本番では広告表示
-      </div>
-    );
+    // CLIENT_ID 未設定: 開発時 = プレースホルダ / 本番 = 何も描画しない (空白で広告領域確保しない)
+    if (!import.meta.env.PROD) {
+      return (
+        <div
+          className={`text-[10px] text-slate-600 bg-slate-900/40 border border-dashed border-slate-800 rounded p-2 text-center ${className ?? ''}`}
+        >
+          AdSense (slot {slotId}) — 本番のみ表示
+        </div>
+      );
+    }
+    return null;
   }
 
   return (

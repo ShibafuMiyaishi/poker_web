@@ -1,5 +1,6 @@
 import { type LegalAction, type PlayerAction, legalActions } from '@pokergo/engine';
 import { useEffect, useMemo, useState } from 'react';
+import { formatChips } from '../lib/format';
 import { handDriver } from '../lib/handDriver';
 import { serverDriver } from '../lib/serverDriver';
 import { useTableStore } from '../stores/tableStore';
@@ -14,9 +15,11 @@ export function ActionPanel() {
   const yourSeat = useTableStore((s) => s.yourSeat);
   const mode = useTableStore((s) => s.mode);
   const status = useTableStore((s) => s.status);
+  const bbDisplay = useTableStore((s) => s.bbDisplay);
 
   const isYourTurn = !!state && state.toAct === yourSeat;
   const player = state?.players.get(yourSeat);
+  const hand = state; // 互換: 旧変数名 alias (formatChips 引数で参照)
 
   const legal = useMemo(
     () => (state && isYourTurn ? legalActions(state, yourSeat) : []),
@@ -144,8 +147,8 @@ export function ActionPanel() {
         {has('fold') && (
           <ActionButton
             kind="crimson"
-            label="FOLD"
-            sub="降りる"
+            label="フォールド"
+            sub="FOLD"
             kbd="F"
             onClick={() => submit({ seat: yourSeat, type: 'fold' })}
           />
@@ -153,8 +156,8 @@ export function ActionPanel() {
         {has('check') && (
           <ActionButton
             kind="bone"
-            label="CHECK"
-            sub="チェック"
+            label="チェック"
+            sub="CHECK"
             kbd="C"
             onClick={() => submit({ seat: yourSeat, type: 'check' })}
           />
@@ -162,8 +165,8 @@ export function ActionPanel() {
         {has('call') && (
           <ActionButton
             kind="jade"
-            label="CALL"
-            sub={`${toCall.toLocaleString()}`}
+            label="コール"
+            sub={formatChips(toCall, hand?.bb ?? 10, bbDisplay)}
             kbd="C"
             onClick={() => submit({ seat: yourSeat, type: 'call' })}
           />
@@ -171,8 +174,8 @@ export function ActionPanel() {
         {canBetOrRaise && (
           <ActionButton
             kind="brass"
-            label={isRaise ? 'RAISE' : 'BET'}
-            sub={`to ${betValue.toLocaleString()}`}
+            label={isRaise ? 'レイズ' : 'ベット'}
+            sub={`▸ ${formatChips(betValue, hand?.bb ?? 10, bbDisplay)}`}
             kbd="R"
             wide
             disabled={betValue < minRaiseTotal || betValue > maxRaiseTotal}
@@ -188,8 +191,8 @@ export function ActionPanel() {
         {has('all_in') && !canBetOrRaise && (
           <ActionButton
             kind="brass-glow"
-            label="ALL-IN"
-            sub={player.stack.toLocaleString()}
+            label="オールイン"
+            sub={formatChips(player.stack, hand?.bb ?? 10, bbDisplay)}
             kbd="A"
             onClick={() => submit({ seat: yourSeat, type: 'all_in' })}
           />
@@ -201,8 +204,8 @@ export function ActionPanel() {
         <div className="flex flex-col gap-2 px-3 py-2 rounded-md border border-brass/25 bg-gradient-to-b from-ink-deep/95 to-ink/95 shadow-card">
           {/* 1 行で min - slider - 値 - max */}
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-mono-tabular text-ivory-muted shrink-0 tabular-nums w-10 text-right">
-              {minRaiseTotal}
+            <span className="text-[10px] font-mono-tabular text-ivory-muted shrink-0 tabular-nums w-12 text-right">
+              {formatChips(minRaiseTotal, hand?.bb ?? 10, bbDisplay)}
             </span>
             <input
               type="range"
@@ -213,15 +216,15 @@ export function ActionPanel() {
               onChange={(e) => setBetValue(Number.parseInt(e.target.value, 10))}
               className="flex-1 h-6"
               aria-label="ベット額"
-              aria-valuetext={`${betValue.toLocaleString()} チップ`}
+              aria-valuetext={formatChips(betValue, hand?.bb ?? 10, bbDisplay)}
             />
-            <div className="flex items-baseline gap-1 shrink-0 min-w-[68px] justify-end">
+            <div className="flex items-baseline gap-1 shrink-0 min-w-[72px] justify-end">
               <span className="brass-text font-display text-xl font-bold tabular-nums leading-none">
-                {betValue.toLocaleString()}
+                {formatChips(betValue, hand?.bb ?? 10, bbDisplay)}
               </span>
             </div>
-            <span className="text-[10px] font-mono-tabular text-ivory-muted shrink-0 tabular-nums w-10">
-              {maxRaiseTotal.toLocaleString()}
+            <span className="text-[10px] font-mono-tabular text-ivory-muted shrink-0 tabular-nums w-12">
+              {formatChips(maxRaiseTotal, hand?.bb ?? 10, bbDisplay)}
             </span>
           </div>
 

@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
+import { formatChips } from '../lib/format';
+import { useTableStore } from '../stores/tableStore';
 import { ChipStack } from './Chip';
 
 interface Props {
   amount: number;
   currentBet?: number;
+  bb?: number;
   compact?: boolean;
 }
 
@@ -11,9 +14,10 @@ interface Props {
 //   円形 brass ring に "POT · ポット" を上弧刻印 + 内側に大型 brass-text 数字。
 //   デスクトップで 200×116px、モバイルで 150×88px。
 //   pot 変化時に pot-tick 微振動 + aria-live。
-export function Pot({ amount, currentBet = 0, compact = false }: Props) {
+export function Pot({ amount, currentBet = 0, bb = 10, compact = false }: Props) {
   const [prev, setPrev] = useState(amount);
   const [tick, setTick] = useState(0);
+  const bbDisplay = useTableStore((s) => s.bbDisplay);
   useEffect(() => {
     if (amount !== prev) {
       setPrev(amount);
@@ -90,7 +94,7 @@ export function Pot({ amount, currentBet = 0, compact = false }: Props) {
             aria-live="polite"
             aria-atomic="true"
           >
-            {amount.toLocaleString()}
+            {formatChips(amount, bb, bbDisplay)}
           </span>
         </div>
       </div>
@@ -100,7 +104,7 @@ export function Pot({ amount, currentBet = 0, compact = false }: Props) {
         <div className="mt-1 inline-flex items-baseline gap-1.5 text-[10px] sm:text-xs tabular-nums">
           <span className="font-jp text-ivory-muted tracking-widest">コール</span>
           <span className="vermilion-text font-display font-bold text-base sm:text-lg">
-            {currentBet.toLocaleString()}
+            {formatChips(currentBet, bb, bbDisplay)}
           </span>
         </div>
       )}

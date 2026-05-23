@@ -22,6 +22,8 @@ interface TableStore {
   // 環境設定 (localStorage 永続化)
   sfxEnabled: boolean;
   motionEnabled: boolean;
+  /** チップ単位 (chip) と bb 単位の表示切替 */
+  bbDisplay: boolean;
   setState: (s: HandState | null) => void;
   setCpuNames: (m: Map<Seat, string>) => void;
   setYourSeat: (s: Seat) => void;
@@ -33,6 +35,7 @@ interface TableStore {
   setConnection: (c: Connection) => void;
   setSfxEnabled: (v: boolean) => void;
   setMotionEnabled: (v: boolean) => void;
+  setBbDisplay: (v: boolean) => void;
   incrementHandsPlayed: () => void;
 }
 
@@ -58,6 +61,7 @@ export const useTableStore = create<TableStore>((set) => ({
   connection: 'idle',
   sfxEnabled: loadBool('pokergo_sfx', true),
   motionEnabled: loadBool('pokergo_motion', true),
+  bbDisplay: loadBool('pokergo_bb_display', false),
   setState: (s) => set({ state: s }),
   setCpuNames: (m) => set({ cpuNames: new Map(m) }),
   setYourSeat: (s) => set({ yourSeat: s }),
@@ -77,6 +81,10 @@ export const useTableStore = create<TableStore>((set) => ({
     if (v) document.documentElement.removeAttribute('data-reduce-motion');
     else document.documentElement.setAttribute('data-reduce-motion', '1');
     set({ motionEnabled: v });
+  },
+  setBbDisplay: (v) => {
+    localStorage.setItem('pokergo_bb_display', v ? '1' : '0');
+    set({ bbDisplay: v });
   },
   incrementHandsPlayed: () => set((s) => ({ handsPlayed: s.handsPlayed + 1 })),
 }));
