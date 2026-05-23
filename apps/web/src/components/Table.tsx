@@ -1,5 +1,6 @@
-import type { Seat } from '@pokergo/shared';
-import { useEffect, useState } from 'react';
+import { derivePosition, evaluateHand } from '@pokergo/engine';
+import type { Card as CardType, Seat } from '@pokergo/shared';
+import { useEffect, useMemo, useState } from 'react';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { getStoredUser } from '../lib/auth';
 import { useTableStore } from '../stores/tableStore';
@@ -70,6 +71,33 @@ export function Table() {
   }, [actionDeadline]);
   const remainingMs = actionDeadline !== null ? Math.max(0, actionDeadline - now) : 0;
 
+  // Hooks は早期 return より前にすべて呼ぶ (React の Rules of Hooks)
+  // 自分のポジション (UTG/BTN 等) — state が null の場合は null を返す
+  const yourPosition = useMemo(
+    () => (state ? derivePosition(state, yourSeat) : null),
+    [state, yourSeat],
+  );
+
+  // showdown 時の勝利役を作る 5 枚を集合化 (brass glow 用)
+  const winningCardSet = useMemo<ReadonlySet<string> | undefined>(() => {
+    if (!state || !winners || !showdownRevealed) return undefined;
+    const cards = new Set<string>();
+    for (const w of winners) {
+      const p = state.players.get(w.seat);
+      if (!p) continue;
+      const all: CardType[] = [...p.holeCards, ...state.board];
+      if (all.length < 5) continue;
+      try {
+        const r = evaluateHand(all);
+        for (const c of r.cards) cards.add(c);
+      } catch {
+        /* ignore */
+      }
+    }
+    return cards;
+  }, [winners, showdownRevealed, state]);
+
+  // すべての hooks の後に早期 return
   if (!state) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3">
@@ -98,7 +126,7 @@ export function Table() {
 
   return (
     <div className="flex flex-col items-center gap-3 sm:gap-5 w-full">
-      {/* 卓情報バー */}
+      {/* 卓情報バー: ハンド番号 / 参加数 / ブラインド / 自分の位置 */}
       <div className="flex items-stretch border border-brass/30 rounded-md bg-ink-deepest/70 backdrop-blur-sm overflow-hidden shadow-card text-[11px] sm:text-xs">
         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-b from-brass-deep/40 to-brass-deep/10 border-r border-brass/30">
           <span className="font-display italic text-[10px] text-brass tracking-widest uppercase">
@@ -114,12 +142,20 @@ export function Table() {
           </span>
           <span className="font-jp text-ivory-muted text-[10px]">人</span>
         </div>
-        <div className="px-3 sm:px-4 py-1.5 flex items-baseline gap-1.5">
+        <div className="px-3 sm:px-4 py-1.5 flex items-baseline gap-1.5 border-r border-brass/15">
           <span className="font-jp text-ivory-muted text-[10px] tracking-widest">SB/BB</span>
           <span className="text-ivory font-mono-tabular tabular-nums">
             {state.sb}/{state.bb}
           </span>
         </div>
+        {yourPlayer && (
+          <div className="px-3 sm:px-4 py-1.5 flex items-baseline gap-1.5">
+            <span className="font-jp text-ivory-muted text-[10px] tracking-widest">位置</span>
+            <span className="text-brass-light font-mono-tabular tabular-nums font-bold">
+              {yourPosition}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* 楕円卓 */}
@@ -146,6 +182,15 @@ export function Table() {
           const isToAct = state.toAct === seat;
           const isButton = state.buttonSeat === seat;
           const label = isYou ? yourLabel : (cpuNames.get(seat) ?? `Seat ${seat}`);
+          // ポーカーポジション (UTG/BTN 等)。player が居ない席は計算スキップ。
+          let pokerPosition: string | undefined;
+          if (player) {
+            try {
+              pokerPosition = derivePosition(state, seat);
+            } catch {
+              /* ignore */
+            }
+          }
           return (
             <div
               key={seat}
@@ -163,6 +208,8 @@ export function Table() {
                 remainingMs={isToAct ? remainingMs : 0}
                 totalMs={isToAct ? actionTotal : 0}
                 position={pos.position}
+                pokerPosition={pokerPosition}
+                winningCards={winningCardSet}
                 compact={isMobile}
               />
             </div>

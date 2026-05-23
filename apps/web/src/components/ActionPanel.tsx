@@ -48,6 +48,55 @@ export function ActionPanel() {
     else void handDriver.submitHumanAction(action);
   };
 
+  // キーボードショートカット: F=fold / C=check or call / R=raise (現 betValue) / A=all-in / Space=skip
+  // biome-ignore lint/correctness/useExhaustiveDependencies: クロージャ依存は意図的に limited
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      // 入力中は無視
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      if (!isYourTurn || !state || !player) {
+        // 手番でない時: Space で次ハンドへ
+        if (e.code === 'Space' && status === 'between_hands' && mode === 'local') {
+          e.preventDefault();
+          handDriver.skipToNextHand();
+        }
+        return;
+      }
+
+      const key = e.key.toLowerCase();
+      if (key === 'f' && has('fold')) {
+        e.preventDefault();
+        submit({ seat: yourSeat, type: 'fold' });
+      } else if (key === 'c') {
+        if (has('check')) {
+          e.preventDefault();
+          submit({ seat: yourSeat, type: 'check' });
+        } else if (has('call')) {
+          e.preventDefault();
+          submit({ seat: yourSeat, type: 'call' });
+        }
+      } else if (key === 'r' && (raise || bet)) {
+        e.preventDefault();
+        if (betValue >= minRaiseTotal && betValue <= maxRaiseTotal) {
+          submit(
+            raise
+              ? { seat: yourSeat, type: 'raise', amount: betValue }
+              : { seat: yourSeat, type: 'bet', amount: betValue },
+          );
+        }
+      } else if (key === 'a' && has('all_in')) {
+        e.preventDefault();
+        submit({ seat: yourSeat, type: 'all_in' });
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: 手番・state 変化に再 bind
+  }, [isYourTurn, status, mode, betValue, minRaiseTotal, maxRaiseTotal]);
+
   // 手番でない場合: between_hands なら **ボタンのみ** 表示 (テキスト + ボタン 二重表示の解消)
   if (!isYourTurn || !state || !player) {
     const showSkip = status === 'between_hands' && mode === 'local';
@@ -98,6 +147,7 @@ export function ActionPanel() {
             kind="crimson"
             label="FOLD"
             sub="降りる"
+            kbd="F"
             onClick={() => submit({ seat: yourSeat, type: 'fold' })}
           />
         )}
@@ -106,6 +156,7 @@ export function ActionPanel() {
             kind="bone"
             label="CHECK"
             sub="チェック"
+            kbd="C"
             onClick={() => submit({ seat: yourSeat, type: 'check' })}
           />
         )}
@@ -114,6 +165,7 @@ export function ActionPanel() {
             kind="jade"
             label="CALL"
             sub={`${toCall.toLocaleString()}`}
+            kbd="C"
             onClick={() => submit({ seat: yourSeat, type: 'call' })}
           />
         )}
@@ -122,6 +174,7 @@ export function ActionPanel() {
             kind="brass"
             label={isRaise ? 'RAISE' : 'BET'}
             sub={`to ${betValue.toLocaleString()}`}
+            kbd="R"
             wide
             disabled={betValue < minRaiseTotal || betValue > maxRaiseTotal}
             onClick={() =>
@@ -138,6 +191,7 @@ export function ActionPanel() {
             kind="brass-glow"
             label="ALL-IN"
             sub={player.stack.toLocaleString()}
+            kbd="A"
             onClick={() => submit({ seat: yourSeat, type: 'all_in' })}
           />
         )}
@@ -207,6 +261,7 @@ interface ActionButtonProps {
   onClick: () => void;
   disabled?: boolean;
   wide?: boolean;
+  kbd?: string; // キーボードショートカットヒント (F/C/R/A)
 }
 
 const KIND_STYLE: Record<ActionButtonProps['kind'], string> = {
@@ -220,13 +275,14 @@ const KIND_STYLE: Record<ActionButtonProps['kind'], string> = {
     'bg-gradient-to-b from-brass-glow via-brass-light to-brass border-2 border-brass-glow text-ink-deepest font-bold hover:brightness-110 shadow-[0_0_24px_rgba(245,215,122,0.6)]',
 };
 
-function ActionButton({ kind, label, sub, onClick, disabled, wide }: ActionButtonProps) {
+function ActionButton({ kind, label, sub, onClick, disabled, wide, kbd }: ActionButtonProps) {
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`h-12 sm:h-14 rounded-md transition flex flex-col items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed ${
+      title={kbd ? `ショートカット: ${kbd}` : undefined}
+      className={`relative h-12 sm:h-14 rounded-md transition flex flex-col items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed ${
         wide ? 'col-span-2 sm:col-span-1 sm:min-w-[140px]' : 'sm:min-w-[100px]'
       } ${KIND_STYLE[kind]}`}
     >
@@ -236,6 +292,14 @@ function ActionButton({ kind, label, sub, onClick, disabled, wide }: ActionButto
       <span className="text-[10px] sm:text-[11px] font-mono-tabular opacity-90 tracking-wide mt-0.5 tabular-nums">
         {sub}
       </span>
+      {kbd && (
+        <span
+          className="hidden sm:flex absolute top-1 right-1.5 w-4 h-4 items-center justify-center rounded text-[9px] font-mono-tabular font-bold bg-ink-deepest/55 text-ivory/85 border border-ivory/15"
+          aria-hidden="true"
+        >
+          {kbd}
+        </span>
+      )}
     </button>
   );
 }

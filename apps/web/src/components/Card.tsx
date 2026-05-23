@@ -204,6 +204,25 @@ export function Card({ card, hidden = false, size = 'md', highlight = false }: P
         {glyph}
       </text>
 
+      {/* A の特別装飾: brass の蔦の輪 (Ace = botanical signature) */}
+      {rank === 'A' && size !== 'xs' && (
+        <g transform="translate(28 40)" opacity="0.7">
+          <circle cx="0" cy="0" r="17" fill="none" stroke="#c89f48" strokeWidth="0.5" />
+          {[0, 60, 120, 180, 240, 300].map((deg) => (
+            <ellipse
+              key={deg}
+              cx="0"
+              cy="-17"
+              rx="2"
+              ry="3.5"
+              fill="#c89f48"
+              opacity="0.65"
+              transform={`rotate(${deg})`}
+            />
+          ))}
+        </g>
+      )}
+
       {/* 中央 suit (大) */}
       <text
         x="28"

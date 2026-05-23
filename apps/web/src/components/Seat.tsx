@@ -16,6 +16,10 @@ interface Props {
   remainingMs: number;
   totalMs: number;
   position?: 'top' | 'side' | 'bottom';
+  // ポーカーポジション (UTG/BTN/SB/BB 等) を席に表示
+  pokerPosition?: string | undefined;
+  // ハンドの結果役を作った 5 枚に含まれるカードを brass glow で強調
+  winningCards?: ReadonlySet<string> | undefined;
   // モバイル時は seat box を小さくして board card との衝突を避ける
   compact?: boolean;
 }
@@ -43,6 +47,8 @@ export function SeatView({
   label,
   remainingMs,
   totalMs,
+  pokerPosition,
+  winningCards,
   compact = false,
 }: Props) {
   if (!player) return <EmptySeatChair seatNo={seat} />;
@@ -173,7 +179,7 @@ export function SeatView({
         </div>
       )}
 
-      {/* カード */}
+      {/* カード — showdown で勝利役の 5 枚に含まれていれば brass glow */}
       <div
         className={`flex gap-0.5 ${compact ? 'mt-1' : 'mt-1.5'} ${isYou ? 'scale-105' : ''} ${
           folded ? 'animate-fold' : ''
@@ -184,7 +190,7 @@ export function SeatView({
             card={reveal ? player.holeCards[0] : undefined}
             hidden={!reveal}
             size={cardSize}
-            highlight={isToAct}
+            highlight={isToAct || (!!winningCards && winningCards.has(player.holeCards[0] ?? ''))}
           />
         </div>
         <div className="animate-deal" style={{ animationDelay: '70ms' }}>
@@ -192,10 +198,20 @@ export function SeatView({
             card={reveal ? player.holeCards[1] : undefined}
             hidden={!reveal}
             size={cardSize}
-            highlight={isToAct}
+            highlight={isToAct || (!!winningCards && winningCards.has(player.holeCards[1] ?? ''))}
           />
         </div>
       </div>
+
+      {/* ポーカーポジション badge: 席の左下に小さく */}
+      {pokerPosition && !folded && (
+        <div
+          className={`absolute ${compact ? '-bottom-2 left-1 text-[8px] px-1' : '-bottom-2.5 left-2 text-[9px] px-1.5'} py-0.5 rounded font-jp font-bold tracking-widest bg-ink-deepest border border-brass/45 text-brass-light shadow-sm`}
+          title={`ポジション: ${pokerPosition}`}
+        >
+          {pokerPosition}
+        </div>
+      )}
 
       {/* ステータスラベル */}
       {folded && (

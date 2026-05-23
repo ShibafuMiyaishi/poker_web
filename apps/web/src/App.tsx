@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AdSlot } from './components/AdSlot';
 import { Toaster } from './components/Toaster';
+import { WelcomeSplash } from './components/WelcomeSplash';
 import { LogoMark } from './components/primitives/LogoMark';
 import { flushPendingQueue } from './lib/api';
 import {
@@ -168,6 +169,7 @@ export default function App() {
       </footer>
 
       <Toaster />
+      <WelcomeSplash />
     </div>
   );
 }
