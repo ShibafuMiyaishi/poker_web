@@ -14,7 +14,6 @@ export function ActionPanel() {
   const yourSeat = useTableStore((s) => s.yourSeat);
   const mode = useTableStore((s) => s.mode);
   const status = useTableStore((s) => s.status);
-  const winners = useTableStore((s) => s.winners);
 
   const isYourTurn = !!state && state.toAct === yourSeat;
   const player = state?.players.get(yourSeat);
@@ -49,18 +48,12 @@ export function ActionPanel() {
     else void handDriver.submitHumanAction(action);
   };
 
-  // 手番でない場合
+  // 手番でない場合: between_hands なら **ボタンのみ** 表示 (テキスト + ボタン 二重表示の解消)
   if (!isYourTurn || !state || !player) {
+    const showSkip = status === 'between_hands' && mode === 'local';
     return (
-      <div className="mt-3 flex flex-col items-center gap-2">
-        <div className="text-xs sm:text-sm font-jp tracking-widest text-center">
-          {status === 'between_hands' && winners ? (
-            <span className="text-brass">次のハンドへ…</span>
-          ) : (
-            <span className="text-ivory-muted">相手の手番</span>
-          )}
-        </div>
-        {status === 'between_hands' && mode === 'local' && (
+      <div className="mt-3 flex flex-col items-center gap-2 min-h-[48px]">
+        {showSkip ? (
           <button
             type="button"
             onClick={() => handDriver.skipToNextHand()}
@@ -68,6 +61,10 @@ export function ActionPanel() {
           >
             次のハンドへ ▸
           </button>
+        ) : (
+          <div className="text-xs sm:text-sm font-jp tracking-widest text-ivory-muted">
+            相手の手番
+          </div>
         )}
       </div>
     );

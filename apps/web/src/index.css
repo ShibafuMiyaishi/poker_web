@@ -86,7 +86,7 @@ body::before {
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'><g fill='none' stroke='%23c89f48' stroke-width='0.4' opacity='0.06'><path d='M 30 0 Q 50 30 30 60 Q 10 90 30 120 Q 50 150 30 180 Q 10 210 30 240'/><path d='M 150 0 Q 130 30 150 60 Q 170 90 150 120 Q 130 150 150 180 Q 170 210 150 240'/><ellipse cx='40' cy='30' rx='4' ry='8' transform='rotate(45 40 30)'/><ellipse cx='20' cy='90' rx='4' ry='8' transform='rotate(-45 20 90)'/><ellipse cx='160' cy='30' rx='4' ry='8' transform='rotate(-45 160 30)'/><ellipse cx='140' cy='90' rx='4' ry='8' transform='rotate(45 140 90)'/></g></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'><g fill='none' stroke='%23c89f48' stroke-width='0.5' opacity='0.10'><path d='M 30 0 Q 50 30 30 60 Q 10 90 30 120 Q 50 150 30 180 Q 10 210 30 240'/><path d='M 150 0 Q 130 30 150 60 Q 170 90 150 120 Q 130 150 150 180 Q 170 210 150 240'/><ellipse cx='40' cy='30' rx='4' ry='8' transform='rotate(45 40 30)'/><ellipse cx='20' cy='90' rx='4' ry='8' transform='rotate(-45 20 90)'/><ellipse cx='160' cy='30' rx='4' ry='8' transform='rotate(-45 160 30)'/><ellipse cx='140' cy='90' rx='4' ry='8' transform='rotate(45 140 90)'/></g></svg>");
 }
 
 .font-display {
@@ -460,14 +460,30 @@ input[type="range"]::-moz-range-thumb {
   border: 0;
 }
 
-/* prefers-reduced-motion: 全アニメを無効化 */
+/* prefers-reduced-motion: ループ系アニメと長尺 transition を無効化。
+   ただし one-shot の重要 announce アニメ (verdict-stamp, winner-halo, chip-toss, rise) は短縮して残す。 */
 @media (prefers-reduced-motion: reduce) {
+  /* ループするものは停止 */
+  .animate-act,
+  .animate-pot-tick {
+    animation: none !important;
+  }
+  /* 長尺 transition も縮める */
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  /* one-shot 系は instant に近づけるだけ */
+  .animate-deal,
+  .animate-flip,
+  .animate-stamp,
+  .animate-chip-toss,
+  .animate-fold,
+  .animate-rise,
+  .animate-winner {
+    animation-duration: 80ms !important;
+    animation-iteration-count: 1 !important;
   }
 }

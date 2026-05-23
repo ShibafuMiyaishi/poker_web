@@ -37,18 +37,41 @@ export function getStoredUser(): PokergoUser | null {
   }
 }
 
-export async function loginAsGuest(): Promise<PokergoUser> {
+// API 通信失敗時のオフラインゲスト。client_uuid を ID 化し、卓ローカル機能だけ動かす。
+function offlineGuest(): PokergoUser {
   const clientUuid = getOrCreateClientUuid();
-  const res = await fetch(`${API_BASE}/api/auth/guest`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ clientUuid }),
-  });
-  if (!res.ok) throw new Error(`auth failed: ${res.status}`);
-  const data = (await res.json()) as { token: string; user: PokergoUser };
-  localStorage.setItem(JWT_KEY, data.token);
-  localStorage.setItem(USER_KEY, JSON.stringify(data.user));
-  return data.user;
+  return {
+    id: `offline-${clientUuid}`,
+    handle: `Guest-${clientUuid.slice(0, 6)}`,
+  };
+}
+
+// 3 秒タイムアウト付きのゲスト認証。API オフライン時は offlineGuest にフォールバック。
+// 旧版は失敗で永久に「認証中…」スタックしていた問題を fail-open に。
+export async function loginAsGuest(timeoutMs = 3000): Promise<PokergoUser> {
+  const clientUuid = getOrCreateClientUuid();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/guest`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ clientUuid }),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error(`auth failed: ${res.status}`);
+    const data = (await res.json()) as { token: string; user: PokergoUser };
+    localStorage.setItem(JWT_KEY, data.token);
+    localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+    return data.user;
+  } catch {
+    clearTimeout(timer);
+    // API オフライン: ローカル専用ゲストにフォールバック。JWT は保存しない。
+    const guest = offlineGuest();
+    localStorage.setItem(USER_KEY, JSON.stringify(guest));
+    return guest;
+  }
 }
 
 export function clearAuth(): void {

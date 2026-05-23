@@ -114,7 +114,7 @@ export function ChipStack({ amount, compact = false, showLabel = true }: ChipSta
   if (amount <= 0) return null;
   if (compact) {
     return (
-      <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-ink-deepest/95 border border-brass/40 shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+      <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-ink-deep/85 border border-brass/40 shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
         <Chip amount={amount} size={14} />
         {showLabel && (
           <span className="text-[11px] font-mono-tabular font-bold text-brass-light tracking-wide tabular-nums">

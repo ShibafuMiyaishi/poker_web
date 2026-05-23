@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CumulativeGraph } from '../components/CumulativeGraph';
 import { StatCard } from '../components/StatCard';
+import { EmptyIllustration } from '../components/primitives/EmptyIllustration';
 import { SectionLabel } from '../components/primitives/SectionLabel';
 import { type GraphPoint, type Period, type StatsSummary, getGraph, getStats } from '../lib/api';
 
@@ -49,8 +50,8 @@ export function StatsPage() {
               onClick={() => setPeriod(p.key)}
               className={`px-3 py-1.5 rounded-md transition font-jp text-xs tracking-widest ${
                 period === p.key
-                  ? 'brass-surface text-ivory'
-                  : 'border border-ink-line bg-ink-deep/60 text-ivory-dim hover:border-brass/40 hover:text-ivory'
+                  ? 'brass-surface text-ivory ring-1 ring-brass-light/60'
+                  : 'border border-ink-line bg-ink-deep/60 text-ivory-dim hover:border-brass/45 hover:text-ivory'
               }`}
               aria-pressed={period === p.key}
             >
@@ -61,13 +62,25 @@ export function StatsPage() {
       </header>
 
       {loading && <div className="text-sm text-ivory-dim font-jp tracking-widest">読み込み中…</div>}
+
       {error && (
-        <div className="text-sm text-crimson-glow font-jp">
-          エラー: {error}（wrangler dev が起動中か確認）
-        </div>
+        <EmptyIllustration
+          variant="chart"
+          title="統計を読み込めません"
+          description="API サーバー (wrangler dev) が起動していません。卓画面でハンドを進めると、起動後に統計が表示されます。"
+          action={{ label: '再試行', onClick: () => location.reload() }}
+        />
       )}
 
-      {stats && (
+      {!loading && !error && stats && stats.handsPlayed === 0 && (
+        <EmptyIllustration
+          variant="chart"
+          title="まだ集計するハンドがありません"
+          description="卓画面で 1 ハンド進めると、ここに VPIP・PFR・bb/100 等の統計が並びます。"
+        />
+      )}
+
+      {!error && stats && stats.handsPlayed > 0 && (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             <StatCard
