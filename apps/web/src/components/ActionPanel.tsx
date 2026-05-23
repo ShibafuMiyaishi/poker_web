@@ -94,7 +94,6 @@ export function ActionPanel() {
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-    // biome-ignore lint/correctness/useExhaustiveDependencies: 手番・state 変化に再 bind
   }, [isYourTurn, status, mode, betValue, minRaiseTotal, maxRaiseTotal]);
 
   // 手番でない場合: between_hands なら **ボタンのみ** 表示 (テキスト + ボタン 二重表示の解消)

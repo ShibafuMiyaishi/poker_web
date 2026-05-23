@@ -3,6 +3,7 @@ import { upsertGoogleUser, upsertGuestUser } from '../db/users';
 import type { Env } from '../env';
 import { buildAuthorizeUrl, exchangeCodeForIdToken, generateState } from '../lib/googleOAuth';
 import { signJwt } from '../lib/jwt';
+import { requireJwtSecret } from '../lib/secrets';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const OAUTH_STATE_COOKIE = 'pokergo_oauth_state';
@@ -22,7 +23,7 @@ authRouter.post('/guest', async (c) => {
   }
 
   const user = await upsertGuestUser(c.env, clientUuid);
-  const secret = c.env.JWT_SECRET ?? 'dev-only-insecure-secret';
+  const secret = requireJwtSecret(c.env);
   const token = await signJwt({ sub: user.id, handle: user.handle }, secret);
   return c.json({ token, user: { id: user.id, handle: user.handle } });
 });
@@ -74,7 +75,7 @@ authRouter.get('/google/callback', async (c) => {
       payload.email,
       payload.name ?? payload.email.split('@')[0] ?? 'Player',
     );
-    const secret = c.env.JWT_SECRET ?? 'dev-only-insecure-secret';
+    const secret = requireJwtSecret(c.env);
     const jwt = await signJwt({ sub: user.id, handle: user.handle }, secret);
     const frontend = c.env.FRONTEND_URL ?? `${url.origin.replace(/8787$/, '5173')}`;
     const target = new URL(frontend);
@@ -88,10 +89,8 @@ authRouter.get('/google/callback', async (c) => {
     );
     return c.redirect(target.toString(), 302);
   } catch (err) {
-    console.error('google oauth failed:', err);
-    return c.json(
-      { error: { code: 'oauth_failed', message: err instanceof Error ? err.message : 'unknown' } },
-      500,
-    );
+    // 内部詳細をクライアントに漏らさない (security)。詳細は Workers ログに留める。
+    console.error('[observability] google oauth failed:', err);
+    return c.json({ error: { code: 'oauth_failed' } }, 500);
   }
 });

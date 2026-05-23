@@ -113,8 +113,8 @@ export function Table() {
   const youWon = winners?.some((w) => w.seat === yourSeat) ?? false;
   const yourPlayer = state.players.get(yourSeat);
   const visualOrder = buildVisualOrder(yourSeat);
-  const user = getStoredUser();
-  const yourLabel = user?.handle ?? 'あなた';
+  // localStorage アクセスは初回のみ。Table は 100ms 間隔で再レンダされるため memo 化必須。
+  const yourLabel = useMemo(() => getStoredUser()?.handle ?? 'あなた', []);
 
   const positions = isMobile ? VISUAL_POSITIONS_MOBILE : VISUAL_POSITIONS_DESKTOP;
   // モバイルは縦長 portrait、デスクトップは横長
@@ -236,7 +236,12 @@ export function Table() {
 
       {/* 勝者ペナント — winner-halo アニメ付き */}
       {winners && showdownRevealed && (
-        <output className="flex flex-col items-center gap-2 animate-stamp" aria-live="polite">
+        <div
+          // biome-ignore lint/a11y/useSemanticElements: 同 HandStrengthBadge — role="status" の意図的使用
+          role="status"
+          className="flex flex-col items-center gap-2 animate-stamp"
+          aria-live="polite"
+        >
           <div
             className={`px-5 py-2 rounded-md border-2 font-display tracking-widest ${
               youWon
@@ -263,7 +268,7 @@ export function Table() {
               </span>
             ))}
           </div>
-        </output>
+        </div>
       )}
 
       <ActionPanel />

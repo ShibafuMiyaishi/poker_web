@@ -10,7 +10,7 @@ import type { HandRange, OutsBreakdown } from './types';
 export function countOuts(
   hero: readonly [Card, Card],
   board: readonly Card[],
-  villainRange: HandRange,
+  _villainRange: HandRange,
   deadCards: readonly Card[],
 ): OutsBreakdown {
   if (board.length < 3 || board.length > 4) {
@@ -22,8 +22,7 @@ export function countOuts(
   // 現在の hero rank (board が 3 枚なら dummy 2 枚で埋めると正しく評価できないため、
   // 各候補カードを 1 枚追加した状態で 5 枚評価する)
   let clean = 0;
-  let weak = 0;
-  const cleanCards: Card[] = [];
+  const weak = 0;
   const heroBoard3 = [...hero, ...board];
 
   // ベースラインの rank (board=3 ならまだ 5 枚未満なので、両方の場合に
@@ -44,10 +43,7 @@ export function countOuts(
     const newRank = evaluateHand(newCards).rank;
     if (newRank > baseRank) {
       clean += 1;
-      cleanCards.push(candidate);
-      // 弱 out 判定: villain がこのカードでより強くなりうるか (簡略化: villain range の
-      // 重み平均で 50% 以上のコンボが newRank 以上を作る場合 weak と判定する)
-      if (isWeakOut(candidate, board, villainRange, deadCards, newRank)) weak += 1;
+      // 弱 out 判定 (将来拡張): MVP では weak は計算せず 0 のまま (UI も未表示)
     }
   }
 
@@ -60,20 +56,6 @@ export function countOuts(
   const rule2equity = Math.min(95, clean * multiplier);
 
   return { clean, weak, blockerAdjusted, rule2equity };
-}
-
-// villain がこのカードでより強い役を作る確率が高いか?
-// 簡易判定: range 内の top 20% コンボ (premium) がこの board+candidate でより強い役を
-// 形成する場合 weak と扱う。詳細レンジ評価はパフォーマンス制約で省略。
-function isWeakOut(
-  _candidate: Card,
-  _board: readonly Card[],
-  _range: HandRange,
-  _dead: readonly Card[],
-  _heroRank: number,
-): boolean {
-  // 将来的に拡張。MVP では always false (= clean = blockerAdjusted)。
-  return false;
 }
 
 // hero が持つカードでブロックされる villain コンボ数を計算 (参考値)。

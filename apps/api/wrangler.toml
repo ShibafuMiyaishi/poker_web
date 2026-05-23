@@ -46,6 +46,11 @@ class_name = "TableDO"
 binding = "GTO_CACHE"
 id = "ce587ca2f82b4be4a022adb7a2673bf4"
 
+# DO migrations は env ごとに再宣言が必要 (Cloudflare 推奨)
+[[env.preview.migrations]]
+tag = "v1"
+new_sqlite_classes = ["TableDO"]
+
 # --- 本番環境 ---
 
 [env.production]
@@ -64,3 +69,7 @@ class_name = "TableDO"
 [[env.production.kv_namespaces]]
 binding = "GTO_CACHE"
 id = "ce587ca2f82b4be4a022adb7a2673bf4"
+
+[[env.production.migrations]]
+tag = "v1"
+new_sqlite_classes = ["TableDO"]

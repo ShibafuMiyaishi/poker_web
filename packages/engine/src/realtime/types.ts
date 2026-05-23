@@ -25,8 +25,9 @@ export interface TableState {
   spectators: Array<{ userId: string; handle: string }>;
 }
 
+import { CPU_NAMES } from '../ai/profile';
+
 const DEFAULT_BUY_IN = 1000;
-const CPU_NAMES = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo'] as const;
 
 export function createInitialTableState(tableId: string, sb: number, bb: number): TableState {
   const seats: TableSeat[] = [];

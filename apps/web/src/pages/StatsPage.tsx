@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { CumulativeGraph } from '../components/CumulativeGraph';
 import { StatCard } from '../components/StatCard';
 import { EmptyIllustration } from '../components/primitives/EmptyIllustration';
@@ -26,7 +26,7 @@ export function StatsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     setLoading(true);
     setError(null);
     Promise.all([getStats(period), getGraph(period)])
@@ -37,6 +37,10 @@ export function StatsPage() {
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   }, [period]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   return (
     <div className="space-y-5">
@@ -68,7 +72,7 @@ export function StatsPage() {
           variant="chart"
           title="統計を読み込めません"
           description="API サーバー (wrangler dev) が起動していません。卓画面でハンドを進めると、起動後に統計が表示されます。"
-          action={{ label: '再試行', onClick: () => location.reload() }}
+          action={{ label: '再試行', onClick: load }}
         />
       )}
 

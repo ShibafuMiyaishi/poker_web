@@ -6,16 +6,16 @@ describe('evFold/evCall/evCheck', () => {
     expect(evFold()).toBe(0);
   });
 
-  test('equity 0.5, call 10, pot 10 → 0.5*20 - 0.5*10 = 5', () => {
-    expect(evCall(0.5, 10, 10)).toBe(5);
+  test('equity 0.5, call 10, pot 10 → 0.5*10 - 0.5*10 = 0 (breakeven)', () => {
+    expect(evCall(0.5, 10, 10)).toBe(0);
   });
 
-  test('equity 0, call 10, pot 10 → -10', () => {
+  test('equity 0, call 10, pot 10 → -10 (純損)', () => {
     expect(evCall(0, 10, 10)).toBe(-10);
   });
 
-  test('equity 1.0, call 10, pot 10 → +20', () => {
-    expect(evCall(1, 10, 10)).toBe(20);
+  test('equity 1.0, call 10, pot 10 → +10 (確実勝利でポットを取る)', () => {
+    expect(evCall(1, 10, 10)).toBe(10);
   });
 
   test('evCheck は equity * pot', () => {

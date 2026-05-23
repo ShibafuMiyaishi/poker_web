@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LogoMark } from './primitives/LogoMark';
 
 const KEY = 'pokergo_seen_intro_v1';
@@ -10,15 +10,54 @@ export function WelcomeSplash() {
     if (typeof localStorage === 'undefined') return true;
     return localStorage.getItem(KEY) === '1';
   });
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const dismissBtnRef = useRef<HTMLButtonElement | null>(null);
 
-  // body スクロール抑止
+  // body スクロール抑止 + 背後コンテンツの inert 化 (a11y フォーカストラップの最も確実な方法)
   useEffect(() => {
     if (seen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    // 兄弟要素を inert に (dialog 自身は除く)
+    const root = document.getElementById('root');
+    if (root) root.setAttribute('inert', '');
+    // 初期フォーカスを「卓につく」ボタンへ
+    dismissBtnRef.current?.focus();
     return () => {
       document.body.style.overflow = prev;
+      if (root) root.removeAttribute('inert');
     };
+  }, [seen]);
+
+  // フォーカストラップ: dialog 内の最初/最後の要素で Tab を循環
+  useEffect(() => {
+    if (seen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        // Esc では閉じない (初回必読、誤操作で見逃さないように) — 仕様判断
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+      const focusable = dialog.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!first || !last) return;
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
   }, [seen]);
 
   if (seen) return null;
@@ -30,6 +69,7 @@ export function WelcomeSplash() {
 
   return (
     <div
+      ref={dialogRef}
       // biome-ignore lint/a11y/useSemanticElements: <dialog> 要素はブラウザ default のスタイリング (max-width/inset) と衝突するため、role="dialog" の <div> で実装する
       role="dialog"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-abyss/85 backdrop-blur-sm animate-rise"
@@ -77,6 +117,7 @@ export function WelcomeSplash() {
           </ul>
 
           <button
+            ref={dismissBtnRef}
             type="button"
             onClick={dismiss}
             className="mt-3 px-6 py-2.5 rounded-md font-display tracking-widest text-sm brass-surface text-ivory hover:brightness-110 transition focus-visible:ring-2 focus-visible:ring-brass-glow"

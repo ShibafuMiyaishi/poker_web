@@ -149,7 +149,8 @@ class HandDriver {
       // CPU 番
       const cpuName = this.cpuBySeat.get(state.toAct);
       const profile = cpuName ? CPU_PROFILES[cpuName] : CPU_PROFILES.Bravo;
-      await delay(CPU_THINK_MIN_MS + Math.random() * (CPU_THINK_MAX_MS - CPU_THINK_MIN_MS));
+      // 演出用の遅延だが、ルートルール (CLAUDE.md) で Math.random 全面禁止のため cryptoRng を使う
+      await delay(CPU_THINK_MIN_MS + this.rng() * (CPU_THINK_MAX_MS - CPU_THINK_MIN_MS));
       const action = decideAction(state, state.toAct, profile, this.rng);
       state = applyAction(state, action);
       useTableStore.getState().setState(state);

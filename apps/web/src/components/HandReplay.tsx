@@ -1,24 +1,16 @@
 import { useMemo, useState } from 'react';
 import type { HandDetail } from '../lib/api';
+import { STREET_JP, actionJp } from '../lib/pokerI18n';
 import { Card } from './Card';
 
 type Street = 'preflop' | 'flop' | 'turn' | 'river' | 'showdown';
 const STREETS: { key: Street; label: string }[] = [
-  { key: 'preflop', label: 'プリフロ' },
-  { key: 'flop', label: 'フロップ' },
-  { key: 'turn', label: 'ターン' },
-  { key: 'river', label: 'リバー' },
-  { key: 'showdown', label: 'SD' },
+  { key: 'preflop', label: STREET_JP.preflop },
+  { key: 'flop', label: STREET_JP.flop },
+  { key: 'turn', label: STREET_JP.turn },
+  { key: 'river', label: STREET_JP.river },
+  { key: 'showdown', label: STREET_JP.showdown },
 ];
-
-const ACTION_JP: Record<string, string> = {
-  fold: 'フォールド',
-  check: 'チェック',
-  call: 'コール',
-  bet: 'ベット',
-  raise: 'レイズ',
-  all_in: 'オールイン',
-};
 
 function boardCards(boardStr: string, street: Street): string[] {
   const all = boardStr ? boardStr.split(/\s+/).filter(Boolean) : [];
@@ -103,7 +95,7 @@ export function HandReplay({ detail }: { detail: HandDetail }) {
                 className={`px-2 py-1 odd:bg-ink-deep/40 flex gap-2 ${a.street === street ? 'border-l-2 border-brass' : 'opacity-60'}`}
               >
                 <span className="text-ivory-muted font-jp w-14 shrink-0 text-[10px]">
-                  {STREET_JP_HR[a.street] ?? a.street}
+                  {(STREET_JP as Record<string, string>)[a.street] ?? a.street}
                 </span>
                 <span className="text-ivory w-20 shrink-0 truncate font-jp">
                   {p
@@ -113,7 +105,7 @@ export function HandReplay({ detail }: { detail: HandDetail }) {
                     : `seat ${a.seat_no}`}
                 </span>
                 <span className="text-ivory-dim font-jp text-[10px]">
-                  {ACTION_JP[a.action_type] ?? a.action_type}
+                  {actionJp(a.action_type)}
                 </span>
                 {a.amount > 0 && (
                   <span className="text-brass font-mono-tabular text-[10px]">{a.amount}</span>
@@ -126,11 +118,3 @@ export function HandReplay({ detail }: { detail: HandDetail }) {
     </div>
   );
 }
-
-const STREET_JP_HR: Record<string, string> = {
-  preflop: 'プリフロ',
-  flop: 'フロップ',
-  turn: 'ターン',
-  river: 'リバー',
-  showdown: 'SD',
-};

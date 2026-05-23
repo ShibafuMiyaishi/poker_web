@@ -1,6 +1,7 @@
 import type { MiddlewareHandler } from 'hono';
 import type { Env } from '../env';
 import { type JwtPayload, verifyJwt } from '../lib/jwt';
+import { requireJwtSecret } from '../lib/secrets';
 
 export interface AuthVariables {
   user: { id: string; handle: string };
@@ -17,7 +18,7 @@ export const jwtMiddleware: MiddlewareHandler<{
     return c.json({ error: { code: 'unauthorized', message: 'Bearer token required' } }, 401);
   }
   const token = auth.slice('Bearer '.length).trim();
-  const secret = c.env.JWT_SECRET ?? 'dev-only-insecure-secret';
+  const secret = requireJwtSecret(c.env);
   const payload = await verifyJwt(token, secret);
   if (!payload) {
     return c.json({ error: { code: 'invalid_token', message: 'JWT invalid or expired' } }, 401);

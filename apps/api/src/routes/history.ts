@@ -26,9 +26,15 @@ historyRouter.get('/hands/:id', async (c) => {
   const detail = await getHandDetail(c.env, c.req.param('id'));
   if (!detail) return c.json({ error: { code: 'not_found' } }, 404);
   // 自分が参加していないハンドは詳細を返さない
-  const isParticipant = detail.players.some((p) => p.user_id === user.id);
-  if (!isParticipant) return c.json({ error: { code: 'forbidden' } }, 403);
-  return c.json(detail);
+  const me = detail.players.find((p) => p.user_id === user.id);
+  if (!me) return c.json({ error: { code: 'forbidden' } }, 403);
+  // ホールカードのマスキング (§12.3 ホールカードを他者に漏らさない)。
+  // 自席のカードは常に開示。他席のカードは went_to_showdown=1 のみ開示。
+  const maskedPlayers = detail.players.map((p) => {
+    const visible = p.seat_no === me.seat_no || p.went_to_showdown === 1;
+    return { ...p, hole_cards: visible ? p.hole_cards : '?? ??' };
+  });
+  return c.json({ ...detail, players: maskedPlayers });
 });
 
 historyRouter.get('/stats', async (c) => {

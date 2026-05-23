@@ -17,8 +17,12 @@ describe('classifyHandCategory', () => {
     expect(classifyHandCategory(['Ks', 'Kh'], ['9d', '7c', '2s'])).toBe('overpair');
   });
 
-  it('フロップ: weak-pair (22 on T82r)', () => {
+  it('フロップ: ボード合致のポケットペア → set', () => {
     expect(classifyHandCategory(['2s', '2h'], ['Td', '8c', '2c'])).toBe('set');
+  });
+
+  it('フロップ: ボードペア + 合致 = trips (KK2 でヒーロー K)', () => {
+    expect(classifyHandCategory(['Ks', '5h'], ['Kd', 'Kc', '2s'])).toBe('trips');
   });
 
   it('フロップ: フラッシュドロー単独', () => {

@@ -37,6 +37,7 @@ const HAND_CATEGORY_JP: Record<HandCategory, string> = {
   overpair: 'オーバーペア',
   'two-pair': 'ツーペア',
   set: 'セット',
+  trips: 'トリップス',
   straight: 'ストレート',
   flush: 'フラッシュ',
   'full-house-plus': 'フルハウス以上',
@@ -53,6 +54,7 @@ function sprHint(spr: number, category: HandCategory): string | null {
       category === 'top-pair' ||
       category === 'overpair' ||
       category === 'set' ||
+      category === 'trips' ||
       category === 'two-pair' ||
       category === 'straight' ||
       category === 'flush' ||
@@ -124,6 +126,7 @@ export function generateVerdict(p: VerdictParams): VerdictResult {
   // 6) ハンドストレングス (役名のみ)
   if (
     p.handCategory === 'set' ||
+    p.handCategory === 'trips' ||
     p.handCategory === 'two-pair' ||
     p.handCategory === 'straight' ||
     p.handCategory === 'flush' ||

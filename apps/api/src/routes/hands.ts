@@ -1,6 +1,6 @@
 import type { HandAnalysis, HandPayload } from '@pokergo/engine';
 import { Hono } from 'hono';
-import { insertHand, isHandParticipant, updateActionAnalysis } from '../db/hands';
+import { insertHand, updateActionAnalysis } from '../db/hands';
 import type { Env } from '../env';
 import type { AuthVariables } from '../middleware/auth';
 
@@ -45,25 +45,25 @@ handsRouter.post('/:id/analysis', async (c) => {
   const user = c.get('user');
   if (!user) return c.json({ error: { code: 'unauthorized' } }, 401);
   const handId = c.req.param('id');
-  if (!(await isHandParticipant(c.env, handId, user.id))) {
-    return c.json({ error: { code: 'forbidden' } }, 403);
-  }
+  // 自分の seat_no を D1 から確定する (クライアントの yourSeat は信用しない)。
+  const seatRow = await c.env.DB.prepare(
+    'SELECT seat_no FROM hand_players WHERE hand_id = ? AND user_id = ?',
+  )
+    .bind(handId, user.id)
+    .first<{ seat_no: number }>();
+  if (!seatRow) return c.json({ error: { code: 'forbidden' } }, 403);
   const raw = (await c.req.json().catch(() => null)) as Partial<HandAnalysis> | null;
-  if (!raw || !raw.actions || typeof raw.yourSeat !== 'number') {
+  if (!raw || !raw.actions) {
     return c.json(
       { error: { code: 'invalid_payload', message: 'analysis payload required' } },
       400,
     );
   }
   try {
-    const result = await updateActionAnalysis(c.env, handId, raw.yourSeat, raw as HandAnalysis);
+    const result = await updateActionAnalysis(c.env, handId, seatRow.seat_no, raw as HandAnalysis);
     return c.json({ ok: true, updated: result.updated });
   } catch (err) {
-    return c.json(
-      {
-        error: { code: 'update_failed', message: err instanceof Error ? err.message : 'db error' },
-      },
-      500,
-    );
+    console.error('[observability] updateActionAnalysis failed:', err);
+    return c.json({ error: { code: 'update_failed' } }, 500);
   }
 });

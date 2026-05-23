@@ -1,5 +1,6 @@
 import type { ActionAnalysis, Verdict } from '@pokergo/engine';
 import { useState } from 'react';
+import { actionJp, streetJp } from '../lib/pokerI18n';
 import { useTableStore } from '../stores/tableStore';
 
 function fmtPct(v: number | null | undefined): string {
@@ -25,23 +26,6 @@ function rowTint(a: ActionAnalysis): string {
   if (a.deviationBb < 0.3) return '';
   return 'bg-crimson/12';
 }
-
-const STREET_JP: Record<string, string> = {
-  preflop: 'プリフロ',
-  flop: 'フロップ',
-  turn: 'ターン',
-  river: 'リバー',
-  showdown: 'SD',
-};
-
-const ACTION_JP: Record<string, string> = {
-  fold: 'フォールド',
-  check: 'チェック',
-  call: 'コール',
-  bet: 'ベット',
-  raise: 'レイズ',
-  all_in: 'オールイン',
-};
 
 const VERDICT_BADGE: Record<Verdict, { label: string; cls: string }> = {
   optimal: {
@@ -146,7 +130,7 @@ function RowGroup({
   return (
     <>
       <tr
-        className={`${rowTint(a)} border-b border-ink-line/30 ${hasDetail ? 'cursor-pointer hover:brightness-110' : ''}`}
+        className={`${rowTint(a)} border-b border-ink-line/30 ${hasDetail ? 'cursor-pointer hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brass-glow' : ''}`}
         onClick={hasDetail ? onToggle : undefined}
         onKeyDown={(e) => {
           if (hasDetail && (e.key === 'Enter' || e.key === ' ')) {
@@ -154,10 +138,13 @@ function RowGroup({
             onToggle();
           }
         }}
+        tabIndex={hasDetail ? 0 : -1}
+        aria-expanded={hasDetail ? expanded : undefined}
+        aria-label={hasDetail ? `${a.street} ${a.action} の詳細を展開` : undefined}
       >
-        <td className="px-2 py-1.5 font-jp text-ivory-dim">{STREET_JP[a.street] ?? a.street}</td>
+        <td className="px-2 py-1.5 font-jp text-ivory-dim">{streetJp(a.street)}</td>
         <td className="px-2 py-1.5 font-jp text-ivory">
-          {ACTION_JP[a.action] ?? a.action}
+          {actionJp(a.action)}
           {a.amount > 0 && (
             <span className="font-mono-tabular ml-1 text-ivory-dim">{a.amount}</span>
           )}
@@ -170,9 +157,7 @@ function RowGroup({
         <td className="px-2 py-1.5 text-right font-mono-tabular brass-text font-bold">
           {fmtBb(a.bestEvBb)}
         </td>
-        <td className="px-2 py-1.5 font-jp text-brass">
-          {ACTION_JP[a.bestAction] ?? a.bestAction}
-        </td>
+        <td className="px-2 py-1.5 font-jp text-brass">{actionJp(a.bestAction)}</td>
         <td className="px-2 py-1.5 text-[10px] text-ivory-muted">
           {a.gtoMatch !== null
             ? a.gtoMatch
@@ -255,6 +240,7 @@ function handCategoryJp(c: string): string {
     overpair: 'オーバーペア',
     'two-pair': 'ツーペア',
     set: 'セット',
+    trips: 'トリップス',
     straight: 'ストレート',
     flush: 'フラッシュ',
     'full-house-plus': 'フルハウス+',

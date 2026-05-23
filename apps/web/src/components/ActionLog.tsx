@@ -1,21 +1,6 @@
 import type { HandState } from '@pokergo/engine';
 import type { Seat } from '@pokergo/shared';
-
-const ACTION_JP: Record<string, string> = {
-  fold: 'フォールド',
-  check: 'チェック',
-  call: 'コール',
-  bet: 'ベット',
-  raise: 'レイズ',
-  all_in: 'オールイン',
-};
-
-const STREET_JP: Record<string, string> = {
-  preflop: 'プリフロ',
-  flop: 'フロップ',
-  turn: 'ターン',
-  river: 'リバー',
-};
+import { actionJp, streetJp } from '../lib/pokerI18n';
 
 interface Props {
   state: HandState;
@@ -49,14 +34,14 @@ export function ActionLog({ state, yourSeat, cpuNames, yourLabel }: Props) {
               className={`flex items-baseline gap-1.5 ${last ? 'text-ivory' : 'text-ivory-muted opacity-70'}`}
             >
               <span className="font-jp text-[9px] text-ivory-muted w-12 shrink-0 truncate">
-                {STREET_JP[a.street] ?? a.street}
+                {streetJp(a.street)}
               </span>
               <span
                 className={`font-display truncate max-w-[100px] ${last ? 'text-brass-light' : ''}`}
               >
                 {name}
               </span>
-              <span className="font-jp">{ACTION_JP[a.type] ?? a.type}</span>
+              <span className="font-jp">{actionJp(a.type)}</span>
               {a.amount > 0 && (
                 <span className="font-mono-tabular text-brass ml-auto tabular-nums">
                   {a.amount.toLocaleString()}

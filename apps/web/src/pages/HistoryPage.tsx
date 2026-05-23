@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { HandReplay } from '../components/HandReplay';
 import { toast } from '../components/Toaster';
 import { EmptyIllustration } from '../components/primitives/EmptyIllustration';
@@ -17,12 +17,18 @@ export function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadHands = useCallback(() => {
+    setLoading(true);
+    setError(null);
     listHands(50, 0)
       .then((r) => setHands(r.hands))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadHands();
+  }, [loadHands]);
 
   const showDetail = (id: string) => {
     setSelected(null);
@@ -60,7 +66,7 @@ export function HistoryPage() {
           variant="cards"
           title="記録を読み込めません"
           description="API サーバー (wrangler dev) が起動していません。卓画面でハンドを進めると、起動後に記録されます。"
-          action={{ label: '再試行', onClick: () => location.reload() }}
+          action={{ label: '再試行', onClick: loadHands }}
         />
       )}
 

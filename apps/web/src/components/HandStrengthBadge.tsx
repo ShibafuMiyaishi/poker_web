@@ -76,8 +76,10 @@ export function HandStrengthBadge({ holeCards, board, folded = false }: Props) {
   const stampKey = `${info.en}-${board.length}`;
 
   return (
-    <output
+    <div
       key={stampKey}
+      // biome-ignore lint/a11y/useSemanticElements: <output> はフォーム出力要素で動的な役名アナウンスには不適。role="status" を <div> で実装する。
+      role="status"
       className={`relative inline-flex items-center gap-3 px-3 sm:px-4 py-2 sm:py-2.5 rounded-md border-2 bg-gradient-to-b from-ink-deep/95 to-ink-abyss/95 paper-noise animate-stamp ${borderTone}`}
       aria-live="polite"
     >
@@ -106,6 +108,6 @@ export function HandStrengthBadge({ holeCards, board, folded = false }: Props) {
           </span>
         )}
       </div>
-    </output>
+    </div>
   );
 }

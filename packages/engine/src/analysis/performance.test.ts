@@ -5,7 +5,9 @@ import type { ActionEntry, HandPlayer, HandState } from '../game/types';
 import { analyzeHand } from './handAnalyzer';
 import { uniformRange } from './handRange';
 
-function makeState(actions: Omit<ActionEntry, 'amount' | 'potBefore' | 'toCallBefore'>[]): HandState {
+function makeState(
+  actions: Omit<ActionEntry, 'amount' | 'potBefore' | 'toCallBefore'>[],
+): HandState {
   const players = new Map<Seat, HandPlayer>();
   for (const s of [0, 1, 2, 3] as Seat[]) {
     players.set(s, {

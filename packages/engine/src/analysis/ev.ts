@@ -1,18 +1,22 @@
-// アクション別 EV を計算する。bb 単位で返す。
+// アクション別 EV を計算する。chip 単位で返す (呼び出し側で bb 単位に変換)。
 //
 // EV(fold) = 0
-// EV(call) = equity * (potBefore + callAmount) - (1 - equity) * callAmount
-//          = equity * potBefore + callAmount * (2*equity - 1)
+// EV(call) = equity * potBefore - (1 - equity) * callAmount
+//   - win 時: opponent のポット pot を獲得 (= +pot)、call は元手なので考えない
+//   - lose 時: call を失う (= -call)
+//   ⇒ breakeven = call / (pot + call)
 //
-// Phase 1 では raise の EV は villain の fold/call レンジ推定が必要なため
-// 計算しない（仕様 §10.3 では「MVP では簡略化」と明記）。
+// 注意: 仕様書 §10.3 の式 "equity * (pot + call) - (1-equity) * call" は誤り。
+// "pot + call" は call 後の総ポットだが、call は自分の元手なので「勝った時の獲得」は pot のみ。
+// 過去バージョンはこのバグを含み、必要勝率を 25% 程度過小評価していた (例: pot=100/call=50 で
+// 実際は 33% 必要なのに 25% で OK 判定していた)。
 
 export function evFold(): number {
   return 0;
 }
 
 export function evCall(equity: number, callAmount: number, potBefore: number): number {
-  return equity * (potBefore + callAmount) - (1 - equity) * callAmount;
+  return equity * potBefore - (1 - equity) * callAmount;
 }
 
 // EV(check) は「現ポットを equity で取れる期待値」の概算。

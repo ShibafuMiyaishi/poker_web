@@ -484,7 +484,8 @@ input[type="range"]::-moz-range-thumb {
 
 /* data-reduce-motion="1" (ユーザ設定で OFF) → 同等の動作 */
 html[data-reduce-motion="1"] .animate-act,
-html[data-reduce-motion="1"] .animate-pot-tick {
+html[data-reduce-motion="1"] .animate-pot-tick,
+html[data-reduce-motion="1"] .animate-brass-pulse {
   animation: none !important;
 }
 html[data-reduce-motion="1"] .animate-deal,
@@ -503,7 +504,8 @@ html[data-reduce-motion="1"] .animate-winner {
 @media (prefers-reduced-motion: reduce) {
   /* ループするものは停止 */
   .animate-act,
-  .animate-pot-tick {
+  .animate-pot-tick,
+  .animate-brass-pulse {
     animation: none !important;
   }
   /* 長尺 transition も縮める */

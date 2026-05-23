@@ -34,8 +34,13 @@ export function classifyHandCategory(
     else if (rank === 6) madeCategory = 'flush';
     else if (rank === 5) madeCategory = 'straight';
     else if (rank === 4) {
-      // セット (hero がペアで board と合致) vs トリップス (board にペアあり)
-      madeCategory = 'set';
+      // セット: hero がポケットペアで board の 1 枚と合致 → 隠れた強さ
+      // トリップス: board にペア (例 KK2) + hero の 1 枚 (K) → 相手から見える
+      const heroIsPair = hero[0][0] === hero[1][0];
+      const boardPaired = new Set(boardRanks).size < boardRanks.length;
+      if (heroIsPair && !boardPaired) madeCategory = 'set';
+      else if (boardPaired) madeCategory = 'trips';
+      else madeCategory = 'set';
     } else if (rank === 3) madeCategory = 'two-pair';
     else if (rank === 2) {
       // ペアの分類: hero のホールカードのランク vs ボード最高

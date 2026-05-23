@@ -1,4 +1,4 @@
-import { type ChartScenario, loadChart } from '@pokergo/gto-charts';
+import { type ChartScenario, handStrength, loadChart } from '@pokergo/gto-charts';
 import type { Position } from '@pokergo/gto-charts';
 import type { Card, Seat } from '@pokergo/shared';
 import { derivePosition } from '../ai/decide';
@@ -107,60 +107,14 @@ function narrowPostflop(range: HandRange, board: readonly Card[], aggressive: bo
       continue;
     }
     if (aggressive) {
-      // value 寄り: ストレングス推定値で 0.5 以上のみ残す
-      const s = strengthHeuristic(k);
+      // value 寄り: ストレングス推定値で 0.5 以上のみ残す (gto-charts/handStrength を共有 DRY)
+      const s = handStrength(k);
       out[k] = s >= 0.55 ? w : isWet && s >= 0.45 ? w * 0.5 : 0;
     } else {
       out[k] = w * 0.7;
     }
   }
   return out;
-}
-
-// gto-charts/handStrength と同じヒューリスティック (避け重複)
-function strengthHeuristic(k: string): number {
-  // ペア
-  if (k.length === 2) {
-    const ch = k[0];
-    const r = ch
-      ? ch === 'A'
-        ? 14
-        : ch === 'K'
-          ? 13
-          : ch === 'Q'
-            ? 12
-            : ch === 'J'
-              ? 11
-              : ch === 'T'
-                ? 10
-                : Number.parseInt(ch, 10)
-      : 0;
-    if (!Number.isFinite(r)) return 0;
-    return 0.5 + (r - 2) * 0.029;
-  }
-  const ch1 = k[0];
-  const ch2 = k[1];
-  const v1 = ch1 ? rankVal(ch1) : 0;
-  const v2 = ch2 ? rankVal(ch2) : 0;
-  const suited = k[2] === 's';
-  let s = 0.3 + (v1 + v2) / 100;
-  if (suited) s += 0.04;
-  const gap = v1 - v2 - 1;
-  if (gap === 0) s += 0.03;
-  else if (gap === 1) s += 0.02;
-  else if (gap === 2) s += 0.01;
-  if (v1 === 14 && suited) s += 0.03;
-  return Math.min(0.85, s);
-}
-
-function rankVal(ch: string): number {
-  if (ch === 'A') return 14;
-  if (ch === 'K') return 13;
-  if (ch === 'Q') return 12;
-  if (ch === 'J') return 11;
-  if (ch === 'T') return 10;
-  const n = Number.parseInt(ch, 10);
-  return Number.isFinite(n) ? n : 0;
 }
 
 function sliceBoard(fullBoard: readonly Card[], street: 'flop' | 'turn' | 'river'): Card[] {

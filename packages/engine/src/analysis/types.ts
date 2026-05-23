@@ -7,7 +7,8 @@ export type HandCategory =
   | 'top-pair'
   | 'overpair'
   | 'two-pair'
-  | 'set'
+  | 'set' // ポケットペア + ボード合致 (隠れた強さ)
+  | 'trips' // ボードペア + 自分の 1 枚 (バレやすい)
   | 'straight'
   | 'flush'
   | 'full-house-plus'

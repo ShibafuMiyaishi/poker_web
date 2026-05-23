@@ -29,6 +29,11 @@ export function AdSlot({ slotId, format = 'auto', className }: Props) {
       s.dataset.pokergoAdsense = CLIENT_ID;
       document.head.appendChild(s);
     }
+    // 重複 push 防止: 既に初期化済み (data-adsbygoogle-status が付与) なら skip。
+    // StrictMode の double-effect / ビュー切替で同じ <ins> が再マウントされた場合に
+    // 「TagError: All ins elements ... were filled」を防ぐ。
+    const insEl = ref.current;
+    if (insEl?.getAttribute('data-adsbygoogle-status')) return;
     try {
       window.adsbygoogle = window.adsbygoogle ?? [];
       window.adsbygoogle.push({});

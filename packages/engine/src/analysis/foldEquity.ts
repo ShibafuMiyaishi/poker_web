@@ -1,3 +1,4 @@
+import { handStrength } from '@pokergo/gto-charts';
 import type { Card, Street } from '@pokergo/shared';
 import { classifyBoard } from './boardTexture';
 import { allHandKeys, combosForHand } from './handRange';
@@ -69,42 +70,13 @@ function foldFractionFromRange(
   return totalWeighted > 0 ? foldWeighted / totalWeighted : 0;
 }
 
-// ハンドストレングスをポストフロップ board と勘案する簡易計算 (vs random opponent の概算)
+// ハンドストレングスをポストフロップ board と勘案する簡易計算 (vs random opponent の概算)。
+// gto-charts の handStrength を再利用 (DRY)。
 function quickEquity(k: string, board: readonly Card[]): number {
-  // gto-charts の handStrength と同じ
-  const base = strengthHeuristic(k);
-  // board がある場合、ペア / セット可能性を概算で加算
+  const base = handStrength(k);
   if (board.length >= 3) {
     const ch1 = k[0];
     if (ch1 && board.some((c) => c[0] === ch1)) return Math.min(0.85, base + 0.15);
   }
   return base;
-}
-
-function strengthHeuristic(k: string): number {
-  if (k.length === 2) {
-    const r = rankVal(k[0] ?? '');
-    return 0.5 + (r - 2) * 0.029;
-  }
-  const v1 = rankVal(k[0] ?? '');
-  const v2 = rankVal(k[1] ?? '');
-  const suited = k[2] === 's';
-  let s = 0.3 + (v1 + v2) / 100;
-  if (suited) s += 0.04;
-  const gap = v1 - v2 - 1;
-  if (gap === 0) s += 0.03;
-  else if (gap === 1) s += 0.02;
-  else if (gap === 2) s += 0.01;
-  if (v1 === 14 && suited) s += 0.03;
-  return Math.min(0.85, s);
-}
-
-function rankVal(ch: string): number {
-  if (ch === 'A') return 14;
-  if (ch === 'K') return 13;
-  if (ch === 'Q') return 12;
-  if (ch === 'J') return 11;
-  if (ch === 'T') return 10;
-  const n = Number.parseInt(ch, 10);
-  return Number.isFinite(n) ? n : 0;
 }

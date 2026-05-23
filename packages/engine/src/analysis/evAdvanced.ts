@@ -38,6 +38,7 @@ function suggestBet(params: ComputeAdvancedEvParams): number {
   let fraction = 0.5;
   switch (handCategory) {
     case 'set':
+    case 'trips':
     case 'two-pair':
     case 'straight':
     case 'flush':

@@ -28,6 +28,7 @@ import type { Seat } from '@pokergo/shared';
 import { insertHand } from '../db/hands';
 import type { Env } from '../env';
 import { verifyJwt } from '../lib/jwt';
+import { requireJwtSecret } from '../lib/secrets';
 
 const STORAGE_KEY = 'tableState';
 const DEFAULT_TABLE_ID = 'main';
@@ -40,7 +41,14 @@ interface WsAttachment {
   userId: string;
   handle: string;
   subscribed: boolean;
+  // rate limit 用: 直近のアクションタイムスタンプ (ms epoch) を最大 RATE_LIMIT_WINDOW 件保持
+  actionTimes: number[];
 }
+
+// 仕様 §12.3: 1 秒に 5 アクション以上で警告、10 以上で切断
+const RATE_LIMIT_WINDOW_MS = 1000;
+const RATE_LIMIT_WARN = 5;
+const RATE_LIMIT_DISCONNECT = 10;
 
 interface ClientMessageRaw {
   type?: string;
@@ -58,7 +66,6 @@ export class TableDO implements DurableObject {
   private readonly ctx: DurableObjectState;
   private readonly env: Env;
   private state: TableState | null = null;
-  private nextHandTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(ctx: DurableObjectState, env: Env) {
     this.ctx = ctx;
@@ -93,7 +100,7 @@ export class TableDO implements DurableObject {
     const url = new URL(request.url);
     const token = url.searchParams.get('token');
     if (!token) return new Response('token required', { status: 401 });
-    const secret = this.env.JWT_SECRET ?? 'dev-only-insecure-secret';
+    const secret = requireJwtSecret(this.env);
     const payload = await verifyJwt(token, secret);
     if (!payload) return new Response('invalid token', { status: 401 });
 
@@ -104,6 +111,7 @@ export class TableDO implements DurableObject {
       userId: payload.sub,
       handle: payload.handle,
       subscribed: false,
+      actionTimes: [],
     };
     server.serializeAttachment(attach);
     return new Response(null, { status: 101, webSocket: client });
@@ -162,6 +170,12 @@ export class TableDO implements DurableObject {
       this.sendError(ws, 'invalid_seat', 'seatNo (0-7) required');
       return;
     }
+    // 仕様 §12.3: 同一ユーザーの複数席着座禁止。既に別席なら拒否する。
+    const existing = findHumanSeat(this.state, attach.userId);
+    if (existing !== null && existing !== msg.seatNo) {
+      this.sendError(ws, 'already_seated', `already at seat ${existing}`);
+      return;
+    }
     try {
       this.state = sitDownHuman(this.state, {
         seatNo: msg.seatNo as Seat,
@@ -190,6 +204,20 @@ export class TableDO implements DurableObject {
     attach: WsAttachment,
     msg: ClientMessageRaw,
   ): Promise<void> {
+    // 仕様 §12.3: アクション頻度制限。1 秒に 10 件以上で切断、5 件以上で警告。
+    const now = Date.now();
+    attach.actionTimes = attach.actionTimes.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+    attach.actionTimes.push(now);
+    if (attach.actionTimes.length >= RATE_LIMIT_DISCONNECT) {
+      this.sendError(ws, 'rate_limit_exceeded', 'too many actions, disconnecting');
+      ws.close(1008, 'rate_limit');
+      return;
+    }
+    if (attach.actionTimes.length >= RATE_LIMIT_WARN) {
+      this.sendError(ws, 'rate_limit_warning', 'slow down');
+    }
+    ws.serializeAttachment(attach);
+
     if (!this.state || !this.state.currentHand) {
       this.sendError(ws, 'no_hand', 'no hand in progress');
       return;
@@ -304,7 +332,11 @@ export class TableDO implements DurableObject {
 
   async alarm(): Promise<void> {
     await this.ensureState();
-    if (!this.state?.currentHand) return;
+    // ハンド進行中でない場合は次ハンドを開始 (finishHand 後の wait)
+    if (!this.state?.currentHand) {
+      await this.maybeStartHand();
+      return;
+    }
     const seat = this.state.currentHand.toAct;
     if (seat === null) {
       await this.scheduleNext();
@@ -372,7 +404,8 @@ export class TableDO implements DurableObject {
     this.broadcastHandEnd(finishedHand, result.winners);
     await this.persist();
     void this.persistToD1(finishedHand, result.winners);
-    this.scheduleNextHand();
+    // alarm でハンド間 wait をスケジュールする。setTimeout は DO hibernation 中に消失するため不可。
+    await this.ctx.storage.setAlarm(Date.now() + NEXT_HAND_DELAY_MS);
   }
 
   private async persistToD1(hand: HandState, winners: WinAllocation[]): Promise<void> {
@@ -415,13 +448,8 @@ export class TableDO implements DurableObject {
     }
   }
 
-  private scheduleNextHand(): void {
-    if (this.nextHandTimer !== null) clearTimeout(this.nextHandTimer);
-    this.nextHandTimer = setTimeout(() => {
-      this.nextHandTimer = null;
-      void this.maybeStartHand();
-    }, NEXT_HAND_DELAY_MS);
-  }
+  // 旧 setTimeout 版は DO hibernation で消失するため廃止。
+  // 代わりに finishHand 内で ctx.storage.setAlarm を呼び、alarm() で maybeStartHand する。
 
   async webSocketClose(): Promise<void> {
     await this.persist();
@@ -514,17 +542,32 @@ export class TableDO implements DurableObject {
   }
 
   private broadcastHandEnd(hand: HandState, winners: WinAllocation[]): void {
-    const showdown: Array<{ seatNo: Seat; cards: [string, string]; handRank: string }> = [];
+    // ショウダウン判定: 非 folded プレイヤーが 2 人以上いる場合のみカード公開。
+    // 仕様 F-G-09: フォールド勝ちはカード非公開がデフォルト (Show/Muck は v2)。
+    const nonFolded: Array<{ seat: Seat; cards: [string, string] }> = [];
     for (const [seat, player] of hand.players) {
       if (player.status !== 'folded') {
-        showdown.push({ seatNo: seat, cards: player.holeCards, handRank: 'unknown' });
+        nonFolded.push({ seat, cards: player.holeCards });
       }
     }
+    const isShowdown = nonFolded.length >= 2;
+    const showdown = isShowdown
+      ? nonFolded.map((p) => ({ seatNo: p.seat, cards: p.cards, handRank: 'unknown' }))
+      : [];
+
     for (const ws of this.allSockets()) {
+      const viewerSeat = this.socketSeat(ws);
+      // 観戦者/他席はショウダウン以外なら他人のホールカードを見れない (§12.3)。
+      // 自席のカードは sendState / broadcastHandStart で既に送信済みなので、ここでは送らない。
+      const viewerShowdown = isShowdown
+        ? showdown
+        : nonFolded
+            .filter((p) => p.seat === viewerSeat)
+            .map((p) => ({ seatNo: p.seat, cards: p.cards, handRank: 'unknown' }));
       this.send(ws, {
         type: 'hand_end',
         winners: winners.map((w) => ({ seatNo: w.seat, amount: w.amount })),
-        showdown,
+        showdown: viewerShowdown,
         analysis: { actions: [] },
       });
     }
