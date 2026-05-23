@@ -168,7 +168,8 @@ export function ActionPanel() {
               value={betValue}
               onChange={(e) => setBetValue(Number.parseInt(e.target.value, 10))}
               className="flex-1 h-6"
-              aria-label="ベット額スライダー"
+              aria-label="ベット額"
+              aria-valuetext={`${betValue.toLocaleString()} チップ`}
             />
             <div className="flex items-baseline gap-1 shrink-0 min-w-[68px] justify-end">
               <span className="brass-text font-display text-xl font-bold tabular-nums leading-none">

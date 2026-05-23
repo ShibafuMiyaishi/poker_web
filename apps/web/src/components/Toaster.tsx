@@ -54,15 +54,25 @@ export function Toaster() {
     };
   }, [items, dismiss]);
 
-  if (items.length === 0) return null;
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-xs">
+    <section
+      className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-xs pointer-events-none"
+      aria-label="通知"
+    >
+      {/* aria-live で読み上げ */}
+      <div className="sr-only" aria-live="polite" aria-atomic="false">
+        {items.map((t) => (
+          <span key={`live-${t.id}`}>
+            {KIND_LABEL[t.kind]}: {t.text}
+          </span>
+        ))}
+      </div>
       {items.map((t) => (
         <button
           key={t.id}
           type="button"
           onClick={() => dismiss(t.id)}
-          className={`relative text-xs px-4 py-2 rounded-md border shadow-card text-left flex items-baseline gap-2 ${KIND_STYLE[t.kind]} animate-verdict`}
+          className={`relative text-xs px-4 py-2 rounded-md border shadow-card text-left flex items-baseline gap-2 pointer-events-auto ${KIND_STYLE[t.kind]} animate-stamp`}
         >
           <span className="font-jp text-[10px] tracking-widest opacity-80">
             {KIND_LABEL[t.kind]}
@@ -70,6 +80,6 @@ export function Toaster() {
           <span className="font-display flex-1">{t.text}</span>
         </button>
       ))}
-    </div>
+    </section>
   );
 }
