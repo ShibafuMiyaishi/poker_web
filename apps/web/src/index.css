@@ -3,25 +3,63 @@
 @tailwind utilities;
 
 /*
-  Pokergo "Botanical Casino" — global styles.
-  深緑 felt + 真鍮 brass + 骨色 bone + 朱 crimson のラウンジ・パレット。
-  Fraunces (英 display) + Manrope (英 body) + Shippori Mincho (jp) + JetBrains Mono (num).
+  Pokergo "Botanical Vault" — global styles.
+  ・植物的有機性 (vine) + 金庫的重厚感 (brass seal) + 浮世絵的役スタンプ
+  ・Fraunces (H1 / verdict / pot のみ) + Manrope (本文) + Shippori Mincho (漢字)
+  ・brass はアクセント限定、cool counterpoint として朱 (vermilion) 追加
 */
 
 :root {
-  --c-ink-deepest: #050a08;
-  --c-ink-deep: #0c1a14;
-  --c-ink: #152821;
-  --c-felt: #0f3d2c;
+  /* ink (背景) */
+  --c-ink-abyss: #04070a;
+  --c-ink-deepest: #070d12;
+  --c-ink-deep: #0d1620;
+  --c-ink: #16212c;
+  --c-ink-soft: #1f2c38;
+  --c-ink-line: #2a3845;
+
+  /* felt (卓) */
+  --c-felt-shadow: #06180f;
+  --c-felt-deep: #0a2418;
+  --c-felt: #0d3a26;
+  --c-felt-mid: #155a3f;
   --c-felt-light: #1d8158;
+
+  /* brass (主アクセント、控えめに) */
+  --c-brass-shadow: #4a3915;
+  --c-brass-deep: #6f5520;
   --c-brass: #c89f48;
   --c-brass-light: #f5d77a;
-  --c-brass-deep: #6f5520;
+  --c-brass-glow: #fde68a;
+
+  /* vermilion 朱 (cool counterpoint) */
+  --c-vermilion-deep: #6e1a1f;
+  --c-vermilion: #c14a3d;
+  --c-vermilion-light: #e85d4a;
+
+  /* moss 苔 (botanical accent) */
+  --c-moss-deep: #1f3d2e;
+  --c-moss: #4d7a5e;
+  --c-moss-light: #7fb88f;
+
+  /* bone / ivory (テキスト) */
   --c-bone: #f4ecd8;
   --c-ivory: #fbf7ed;
-  --c-ivory-dim: #d4cdb7;
-  --c-crimson: #b22a2a;
+  --c-ivory-dim: #cfc7b1;
+  --c-ivory-muted: #8a8270;
+
+  /* jade / crimson (勝/負シグナル) */
   --c-jade: #4a9d7a;
+  --c-jade-glow: #6ee7b7;
+  --c-crimson: #b22a2a;
+  --c-crimson-glow: #ef4444;
+
+  /* radius */
+  --r-xs: 3px;
+  --r-sm: 5px;
+  --r-md: 8px;
+  --r-lg: 14px;
+  --r-pill: 999px;
 }
 
 html,
@@ -31,18 +69,30 @@ body,
 }
 
 body {
-  font-family: "Manrope", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Manrope", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-feature-settings: "ss01", "cv11";
   -webkit-font-smoothing: antialiased;
-  background: radial-gradient(ellipse 1400px 800px at 50% -10%, #0c1a14 0%, transparent 60%),
-    radial-gradient(ellipse 1200px 700px at 50% 110%, #0c1a14 0%, transparent 60%),
-    linear-gradient(180deg, #050a08 0%, #0c1a14 100%);
+  background: radial-gradient(ellipse 1200px 700px at 50% -10%, #0d1620 0%, transparent 60%),
+    radial-gradient(ellipse 800px 500px at 50% 110%, #0a1018 0%, transparent 60%),
+    linear-gradient(180deg, #04070a 0%, #0a1018 100%);
   background-attachment: fixed;
   color: var(--c-ivory);
+}
+
+/* 背景に蔦パターンを薄く敷く (botanical signature) */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'><g fill='none' stroke='%23c89f48' stroke-width='0.4' opacity='0.06'><path d='M 30 0 Q 50 30 30 60 Q 10 90 30 120 Q 50 150 30 180 Q 10 210 30 240'/><path d='M 150 0 Q 130 30 150 60 Q 170 90 150 120 Q 130 150 150 180 Q 170 210 150 240'/><ellipse cx='40' cy='30' rx='4' ry='8' transform='rotate(45 40 30)'/><ellipse cx='20' cy='90' rx='4' ry='8' transform='rotate(-45 20 90)'/><ellipse cx='160' cy='30' rx='4' ry='8' transform='rotate(-45 160 30)'/><ellipse cx='140' cy='90' rx='4' ry='8' transform='rotate(45 140 90)'/></g></svg>");
 }
 
 .font-display {
   font-family: "Fraunces", ui-serif, Georgia, serif;
   font-optical-sizing: auto;
+  font-variation-settings: "SOFT" 30, "WONK" 0;
 }
 .font-mono-tabular {
   font-family: "JetBrains Mono", ui-monospace, monospace;
@@ -52,16 +102,17 @@ body {
   font-family: "Shippori Mincho B1", "Noto Serif JP", "Yu Mincho", serif;
 }
 
-/* ============== Felt Surface ============== */
+/* ============== Felt Surface (refined) ============== */
 
 .felt-surface {
   position: relative;
+  /* center spot light: より控えめに */
   background: radial-gradient(
-    ellipse 65% 55% at 50% 35%,
-    #1d8158 0%,
-    #155a3f 35%,
-    #0f3d2c 65%,
-    #0a2f22 100%
+    ellipse 70% 50% at 50% 38%,
+    #1a704a 0%,
+    #155a3f 30%,
+    #0d3a26 65%,
+    #08291b 100%
   );
 }
 .felt-surface::before {
@@ -69,53 +120,40 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.05 0 0 0 0 0.15 0 0 0 0 0.10 0 0 0 0.42 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.55'/></svg>");
+  /* 細かい woven 風 cross-noise */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.04 0 0 0 0 0.13 0 0 0 0 0.09 0 0 0 0.5 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.6'/></svg>");
   mix-blend-mode: multiply;
-  opacity: 0.55;
-  /* felt-drift は 30s で動きが見えないため停止。静的なグレイン感のみ。 */
+  opacity: 0.5;
 }
 .felt-surface::after {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(ellipse at 50% 0%, rgba(245, 215, 122, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 100%, rgba(0, 0, 0, 0.45) 0%, transparent 60%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(245, 215, 122, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(0, 0, 0, 0.55) 0%, transparent 60%);
 }
 
-@keyframes felt-drift {
-  0%,
-  100% {
-    background-position: 0 0;
-  }
-  50% {
-    background-position: 40px 30px;
-  }
-}
-
-/* Brass inlay rim (table border) — 静的でラグジュアリーな質感。
-   常時 shimmer はうるさいので削除し、conic-gradient で立体感だけ表現。 */
+/* Brass inlay rim (静的、conic で立体感) */
 .brass-rim {
-  background: linear-gradient(
-    135deg,
-    #6f5520 0%,
-    #c89f48 25%,
-    #f5d77a 50%,
-    #c89f48 75%,
-    #6f5520 100%
+  background: conic-gradient(
+    from 220deg,
+    #6f5520 0deg,
+    #c89f48 60deg,
+    #f5d77a 120deg,
+    #c89f48 200deg,
+    #6f5520 280deg,
+    #4a3915 320deg,
+    #6f5520 360deg
   );
 }
 
-@keyframes brass-shimmer {
-  0% {
-    background-position: 200% 50%;
-  }
-  100% {
-    background-position: -200% 50%;
-  }
+/* Vine pattern overlay (蔦) */
+.vine-overlay {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'><g fill='none' stroke='%23c89f48' stroke-width='0.5' opacity='0.18'><path d='M 90 0 Q 110 25 90 50 Q 70 75 90 100 Q 110 125 90 150 Q 70 175 90 180'/><ellipse cx='100' cy='25' rx='3.5' ry='7' transform='rotate(45 100 25)'/><ellipse cx='80' cy='75' rx='3.5' ry='7' transform='rotate(-45 80 75)'/><ellipse cx='100' cy='125' rx='3.5' ry='7' transform='rotate(45 100 125)'/></g></svg>");
 }
 
-/* Paper noise background (card chrome, hand history) */
+/* Paper noise */
 .paper-noise {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.25 0 0 0 0 0.15 0 0 0 0.32 0'/></filter><rect width='100%' height='100%' filter='url(%23p)'/></svg>");
   background-blend-mode: multiply;
@@ -134,35 +172,61 @@ body {
   }
 }
 .animate-deal {
-  /* 220ms に短縮: 開始の遅延感を改善 */
   animation: deal-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes card-flip {
+  0% {
+    transform: rotateY(180deg) scale(0.92);
+    opacity: 0.5;
+  }
+  100% {
+    transform: rotateY(0deg) scale(1);
+    opacity: 1;
+  }
+}
+.animate-flip {
+  animation: card-flip 380ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  transform-style: preserve-3d;
 }
 
 @keyframes act-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 2px rgba(245, 215, 122, 0.55), 0 0 22px rgba(245, 215, 122, 0.25);
+    box-shadow: 0 0 0 2px rgba(245, 215, 122, 0.55), 0 0 24px rgba(245, 215, 122, 0.25);
   }
   50% {
-    box-shadow: 0 0 0 3px rgba(245, 215, 122, 0.85), 0 0 30px rgba(245, 215, 122, 0.45);
+    box-shadow: 0 0 0 3px rgba(245, 215, 122, 0.85), 0 0 32px rgba(245, 215, 122, 0.45);
   }
 }
 .animate-act {
   animation: act-pulse 1.7s ease-in-out infinite;
 }
 
-@keyframes verdict-rise {
-  from {
+/* 浮世絵スタンプの落下: 上から振動を伴って sink in */
+@keyframes verdict-stamp {
+  0% {
     opacity: 0;
-    transform: translateY(8px) scale(0.98);
+    transform: translateY(-40px) scale(1.3) rotate(-8deg);
+    filter: blur(2px);
   }
-  to {
+  60% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(4px) scale(0.94) rotate(2deg);
+    filter: blur(0);
+  }
+  75% {
+    transform: translateY(-2px) scale(1.02) rotate(-1deg);
+  }
+  90% {
+    transform: translateY(1px) scale(0.99) rotate(0.5deg);
+  }
+  100% {
+    transform: translateY(0) scale(1) rotate(0);
   }
 }
-.animate-verdict {
-  animation: verdict-rise 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+.animate-stamp {
+  animation: verdict-stamp 540ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
 @keyframes chip-toss {
@@ -179,17 +243,81 @@ body {
   animation: chip-toss 360ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
+/* Pot tickering: 数字に微振動 */
+@keyframes pot-tick {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  20% {
+    transform: translateY(-1px);
+  }
+  40% {
+    transform: translateY(0.5px);
+  }
+  60% {
+    transform: translateY(-0.3px);
+  }
+}
+.animate-pot-tick {
+  animation: pot-tick 280ms ease-out;
+}
+
+/* Fold dissolve: カードが薄れて回転落下 */
+@keyframes fold-dissolve {
+  0% {
+    opacity: 1;
+    transform: rotate(0) translateY(0);
+  }
+  100% {
+    opacity: 0.25;
+    transform: rotate(8deg) translateY(4px);
+  }
+}
+.animate-fold {
+  animation: fold-dissolve 320ms ease-out both;
+}
+
+/* Winner halo (ちらつく金光) */
+@keyframes winner-halo {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px rgba(110, 231, 183, 0.5), 0 0 30px rgba(110, 231, 183, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(245, 215, 122, 0.65), 0 0 42px rgba(245, 215, 122, 0.55);
+  }
+}
+.animate-winner {
+  animation: winner-halo 1.6s ease-in-out 3;
+}
+
+/* Section reveal (page-load) */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-rise {
+  animation: rise 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* ============== Brass surface ============== */
 
 .brass-surface {
   background: linear-gradient(
     180deg,
-    rgba(245, 215, 122, 0.18) 0%,
+    rgba(245, 215, 122, 0.2) 0%,
     rgba(200, 159, 72, 0.08) 50%,
     rgba(111, 85, 32, 0.18) 100%
   );
-  border: 1px solid rgba(245, 215, 122, 0.35);
-  box-shadow: inset 0 1px 0 rgba(245, 215, 122, 0.25), inset 0 -1px 0 rgba(111, 85, 32, 0.2);
+  border: 1px solid rgba(245, 215, 122, 0.4);
+  box-shadow: inset 0 1px 0 rgba(245, 215, 122, 0.3), inset 0 -1px 0 rgba(111, 85, 32, 0.25);
 }
 
 .brass-text {
@@ -197,6 +325,29 @@ body {
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.vermilion-text {
+  background: linear-gradient(180deg, #e85d4a 0%, #c14a3d 60%, #6e1a1f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Ink seal (印章) — 朱の四角い印 */
+.ink-seal {
+  background: radial-gradient(circle at 30% 30%, #e85d4a, #c14a3d 60%, #6e1a1f);
+  color: #fbf7ed;
+  font-family: "Shippori Mincho B1", serif;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15), inset 0 0 8px rgba(0, 0, 0, 0.4), 0 2px 6px
+    rgba(193, 74, 61, 0.4);
+  /* 印が紙にじむ感 */
+  filter: contrast(1.08) saturate(1.1);
 }
 
 /* ============== Scrollbar ============== */
@@ -209,19 +360,50 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(200, 159, 72, 0.25);
+  background: rgba(200, 159, 72, 0.3);
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(200, 159, 72, 0.5);
+  background: rgba(200, 159, 72, 0.55);
   background-clip: padding-box;
 }
 
 ::selection {
-  background: rgba(245, 215, 122, 0.4);
-  color: var(--c-ivory);
+  background: rgba(245, 215, 122, 0.45);
+  color: var(--c-ink-abyss);
+}
+
+/* ============== Focus Visible (強化) ============== */
+
+button:focus-visible,
+input:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #fde68a;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(253, 230, 138, 0.25);
+  border-radius: 4px;
+}
+
+/* Skip link (a11y) */
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  padding: 8px 16px;
+  background: var(--c-brass);
+  color: var(--c-ink-abyss);
+  font-family: "Fraunces", serif;
+  font-weight: 700;
+  text-decoration: none;
+  transition: top 180ms ease;
+}
+.skip-link:focus-visible {
+  top: 12px;
 }
 
 /* Brass range slider */
@@ -235,7 +417,7 @@ input[type="range"]::-webkit-slider-runnable-track {
   height: 6px;
   background: linear-gradient(90deg, #6f5520 0%, #c89f48 50%, #6f5520 100%);
   border-radius: 999px;
-  border: 1px solid rgba(245, 215, 122, 0.3);
+  border: 1px solid rgba(245, 215, 122, 0.35);
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -247,6 +429,10 @@ input[type="range"]::-webkit-slider-thumb {
   background: radial-gradient(circle at 30% 30%, #fde68a, #c89f48 60%, #6f5520);
   border: 2px solid rgba(0, 0, 0, 0.4);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition: transform 120ms ease;
+}
+input[type="range"]:active::-webkit-slider-thumb {
+  transform: scale(1.15);
 }
 input[type="range"]::-moz-range-track {
   height: 6px;
@@ -259,4 +445,29 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 50%;
   background: radial-gradient(circle at 30% 30%, #fde68a, #c89f48 60%, #6f5520);
   border: 2px solid rgba(0, 0, 0, 0.4);
+}
+
+/* Visually-hidden (sr-only) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* prefers-reduced-motion: 全アニメを無効化 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
