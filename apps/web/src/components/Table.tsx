@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { getStoredUser } from '../lib/auth';
 import { useTableStore } from '../stores/tableStore';
+import { ActionLog } from './ActionLog';
 import { ActionPanel } from './ActionPanel';
 import { AnalysisPanel } from './AnalysisPanel';
 import { Board } from './Board';
@@ -216,6 +217,9 @@ export function Table() {
           );
         })}
       </div>
+
+      {/* アクションログ (live feed): 最新 3 アクション */}
+      <ActionLog state={state} yourSeat={yourSeat} cpuNames={cpuNames} yourLabel={yourLabel} />
 
       {/* あなたの役 (浮世絵スタンプ): フォールド中は非表示 */}
       {yourPlayer && (

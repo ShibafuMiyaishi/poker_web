@@ -89,10 +89,10 @@ export function HistoryPage() {
                   <button
                     type="button"
                     onClick={() => showDetail(h.id)}
-                    className={`w-full text-left px-2 py-1.5 rounded transition flex justify-between items-center gap-2 ${
+                    className={`w-full text-left px-2 py-1.5 rounded transition-all duration-150 ease-out flex justify-between items-center gap-2 ${
                       selected?.hand.id === h.id
-                        ? 'bg-brass/10 border-l-2 border-brass'
-                        : 'hover:bg-ink-soft/60 border-l-2 border-transparent'
+                        ? 'bg-brass/15 border-l-2 border-brass shadow-[0_4px_12px_-2px_rgba(245,215,122,0.15)] -translate-x-0.5'
+                        : 'hover:bg-ink-soft/70 hover:border-l-2 hover:border-brass/45 hover:-translate-y-px hover:shadow-[0_2px_8px_-2px_rgba(245,215,122,0.12)] border-l-2 border-transparent'
                     }`}
                   >
                     <span className="text-[10px] text-ivory-muted font-mono-tabular shrink-0">

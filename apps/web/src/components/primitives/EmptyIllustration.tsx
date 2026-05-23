@@ -82,7 +82,7 @@ export function EmptyIllustration({ title, description, action, variant = 'gener
         <button
           type="button"
           onClick={action.onClick}
-          className="mt-2 px-5 py-2 rounded-md brass-surface font-jp tracking-widest text-sm text-ivory hover:brightness-110 transition"
+          className="mt-2 px-5 py-2 rounded-md brass-surface font-jp tracking-widest text-sm text-ivory hover:brightness-110 transition animate-brass-pulse"
         >
           {action.label}
         </button>

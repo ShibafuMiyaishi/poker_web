@@ -204,6 +204,22 @@ body::before {
 }
 
 /* 浮世絵スタンプの落下: 上から振動を伴って sink in */
+/* Empty illustration CTA gentle pulse */
+@keyframes brass-pulse {
+  0%,
+  100% {
+    box-shadow: inset 0 1px 0 rgba(245, 215, 122, 0.3), inset 0 -1px 0 rgba(111, 85, 32, 0.25), 0 0
+      0 rgba(245, 215, 122, 0);
+  }
+  50% {
+    box-shadow: inset 0 1px 0 rgba(245, 215, 122, 0.45), inset 0 -1px 0 rgba(111, 85, 32, 0.3), 0 0
+      16px rgba(245, 215, 122, 0.3);
+  }
+}
+.animate-brass-pulse {
+  animation: brass-pulse 2.8s ease-in-out infinite;
+}
+
 @keyframes verdict-stamp {
   0% {
     opacity: 0;
@@ -387,23 +403,29 @@ a:focus-visible,
   border-radius: 4px;
 }
 
-/* Skip link (a11y) */
+/* Skip link (a11y) — focus 時に大きく brass glow で表示 */
 .skip-link {
   position: fixed;
   top: -100px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
-  padding: 8px 16px;
-  background: var(--c-brass);
+  padding: 10px 22px;
+  background: linear-gradient(180deg, #fde68a, #c89f48 60%, #6f5520);
   color: var(--c-ink-abyss);
   font-family: "Fraunces", serif;
-  font-weight: 700;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.12em;
   text-decoration: none;
+  border-radius: 6px;
   transition: top 180ms ease;
+  box-shadow: 0 8px 30px -4px rgba(245, 215, 122, 0.5);
 }
 .skip-link:focus-visible {
-  top: 12px;
+  top: 16px;
+  outline: 3px solid var(--c-brass-glow);
+  outline-offset: 4px;
 }
 
 /* Brass range slider */
@@ -458,6 +480,22 @@ input[type="range"]::-moz-range-thumb {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* data-reduce-motion="1" (ユーザ設定で OFF) → 同等の動作 */
+html[data-reduce-motion="1"] .animate-act,
+html[data-reduce-motion="1"] .animate-pot-tick {
+  animation: none !important;
+}
+html[data-reduce-motion="1"] .animate-deal,
+html[data-reduce-motion="1"] .animate-flip,
+html[data-reduce-motion="1"] .animate-stamp,
+html[data-reduce-motion="1"] .animate-chip-toss,
+html[data-reduce-motion="1"] .animate-fold,
+html[data-reduce-motion="1"] .animate-rise,
+html[data-reduce-motion="1"] .animate-winner {
+  animation-duration: 80ms !important;
+  animation-iteration-count: 1 !important;
 }
 
 /* prefers-reduced-motion: ループ系アニメと長尺 transition を無効化。

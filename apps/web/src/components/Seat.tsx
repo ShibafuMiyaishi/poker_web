@@ -1,5 +1,6 @@
 import type { HandPlayer } from '@pokergo/engine';
 import type { Seat as SeatType } from '@pokergo/shared';
+import { memo } from 'react';
 import { Card } from './Card';
 import { ChipStack } from './Chip';
 import { TimerBar } from './TimerBar';
@@ -28,6 +29,24 @@ function initial(label: string): string {
   return (label[0] ?? '?').toUpperCase();
 }
 
+// ポジション別の色 tone:
+//   BTN (ボタン)    → brass-glow + glow border (最強)
+//   CO (カットオフ) → brass-light
+//   HJ, MP          → brass
+//   UTG, UTG+1      → bone (controlled)
+//   SB, BB          → vermilion-light + border (forced)
+const POSITION_TONE: Record<string, string> = {
+  BTN: 'text-brass-glow border border-brass-glow/65 shadow-[0_0_8px_rgba(245,215,122,0.35)]',
+  CO: 'text-brass-light border border-brass/55',
+  HJ: 'text-brass border border-brass/45',
+  MP: 'text-brass border border-brass/45',
+  'UTG+1': 'text-bone border border-ivory/30',
+  UTG: 'text-bone border border-ivory/30',
+  SB: 'text-vermilion-light border border-vermilion/55',
+  BB: 'text-vermilion-light border border-vermilion/55',
+  default: 'text-brass-light border border-brass/45',
+};
+
 function shortStack(n: number): string {
   if (n >= 10_000) return `${Math.floor(n / 1000)}k`;
   if (n >= 1000) {
@@ -37,7 +56,10 @@ function shortStack(n: number): string {
   return n.toString();
 }
 
-export function SeatView({
+// React.memo: 親 (Table) の毎フレーム再レンダ時に席を不要に再描画させない。
+export const SeatView = memo(SeatViewImpl);
+
+function SeatViewImpl({
   seat,
   player,
   isYou,
@@ -203,10 +225,11 @@ export function SeatView({
         </div>
       </div>
 
-      {/* ポーカーポジション badge: 席の左下に小さく */}
+      {/* ポーカーポジション badge: 席の左下に。ポジション別に色 tone を変える
+          BTN brightest brass / CO bright / HJ MP brass / UTG bone / SB BB vermilion */}
       {pokerPosition && !folded && (
         <div
-          className={`absolute ${compact ? '-bottom-2 left-1 text-[8px] px-1' : '-bottom-2.5 left-2 text-[9px] px-1.5'} py-0.5 rounded font-jp font-bold tracking-widest bg-ink-deepest border border-brass/45 text-brass-light shadow-sm`}
+          className={`absolute ${compact ? '-bottom-2 left-1 text-[8px] px-1' : '-bottom-2.5 left-2 text-[9px] px-1.5'} py-0.5 rounded font-jp font-bold tracking-widest bg-ink-deepest shadow-sm ${POSITION_TONE[pokerPosition] ?? POSITION_TONE.default}`}
           title={`ポジション: ${pokerPosition}`}
         >
           {pokerPosition}
@@ -245,3 +268,4 @@ export function SeatView({
     </div>
   );
 }
+SeatViewImpl.displayName = 'SeatView';

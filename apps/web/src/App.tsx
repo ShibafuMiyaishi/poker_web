@@ -165,6 +165,13 @@ export default function App() {
               </button>
             ))}
           </nav>
+          {/* brand crest */}
+          <div className="flex items-center gap-1.5 opacity-70" aria-hidden="true">
+            <LogoMark size={20} />
+            <span className="font-display italic text-[10px] tracking-widest text-brass">
+              Botanical Vault
+            </span>
+          </div>
         </div>
       </footer>
 

@@ -204,7 +204,8 @@ export function Card({ card, hidden = false, size = 'md', highlight = false }: P
         {glyph}
       </text>
 
-      {/* A の特別装飾: brass の蔦の輪 (Ace = botanical signature) */}
+      {/* Court / Ace の brass 装飾 (botanical / royal signature) */}
+      {/* A: 蔦の輪 (Ace = botanical) */}
       {rank === 'A' && size !== 'xs' && (
         <g transform="translate(28 40)" opacity="0.7">
           <circle cx="0" cy="0" r="17" fill="none" stroke="#c89f48" strokeWidth="0.5" />
@@ -220,6 +221,52 @@ export function Card({ card, hidden = false, size = 'md', highlight = false }: P
               transform={`rotate(${deg})`}
             />
           ))}
+        </g>
+      )}
+      {/* K: 王冠 (3 山 + 帯 + 中央宝石) */}
+      {rank === 'K' && size !== 'xs' && (
+        <g transform="translate(28 24)" opacity="0.75">
+          <path
+            d="M -10 6 L -8 -2 L -5 4 L -2 -6 L 1 4 L 4 -6 L 7 4 L 9 -2 L 11 6 Z"
+            fill="none"
+            stroke="#c89f48"
+            strokeWidth="0.7"
+            strokeLinejoin="round"
+          />
+          <rect x="-10" y="6" width="21" height="1.6" fill="#c89f48" opacity="0.6" />
+          <circle cx="1" cy="-5" r="1.2" fill="#c89f48" opacity="0.8" />
+        </g>
+      )}
+      {/* Q: 花輪 (4 花 + 葉 + 細リング) */}
+      {rank === 'Q' && size !== 'xs' && (
+        <g transform="translate(28 40)" opacity="0.65">
+          <circle r="14" fill="none" stroke="#c89f48" strokeWidth="0.4" strokeDasharray="1 1.5" />
+          {[0, 90, 180, 270].map((deg) => (
+            <g key={deg} transform={`rotate(${deg})`}>
+              {/* 花 4 弁 */}
+              <circle cx="0" cy="-14" r="2" fill="#c89f48" opacity="0.85" />
+              <circle cx="0" cy="-14" r="1" fill="#0c1a14" />
+              {/* 葉 */}
+              <ellipse
+                cx="10"
+                cy="-10"
+                rx="2"
+                ry="3"
+                transform="rotate(45 10 -10)"
+                fill="#c89f48"
+                opacity="0.55"
+              />
+            </g>
+          ))}
+        </g>
+      )}
+      {/* J: 葉アクセント */}
+      {rank === 'J' && size !== 'xs' && (
+        <g transform="translate(28 22)" opacity="0.7">
+          <path d="M 0 -5 Q -5 0 0 5 Q 5 0 0 -5 Z" fill="#c89f48" opacity="0.85" />
+          <line x1="0" y1="-5" x2="0" y2="5" stroke="#0c1a14" strokeWidth="0.4" opacity="0.5" />
+          <line x1="-2.5" y1="-2" x2="-1" y2="0" stroke="#0c1a14" strokeWidth="0.3" opacity="0.4" />
+          <line x1="2.5" y1="-2" x2="1" y2="0" stroke="#0c1a14" strokeWidth="0.3" opacity="0.4" />
         </g>
       )}
 

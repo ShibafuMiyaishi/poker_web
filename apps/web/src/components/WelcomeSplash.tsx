@@ -29,11 +29,10 @@ export function WelcomeSplash() {
   };
 
   return (
-    // biome-ignore lint/a11y/useSemanticElements: <dialog> 要素はブラウザ default のスタイリングと
-    // 衝突するため、role="dialog" の <div> で modal を実装する (focus trap は将来追加)
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-abyss/85 backdrop-blur-sm animate-rise"
+      // biome-ignore lint/a11y/useSemanticElements: <dialog> 要素はブラウザ default のスタイリング (max-width/inset) と衝突するため、role="dialog" の <div> で実装する
       role="dialog"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-abyss/85 backdrop-blur-sm animate-rise"
       aria-modal="true"
       aria-label="Pokergo へようこそ"
     >
